@@ -1,0 +1,106 @@
+# Stock Price Prediction using LSTM
+# Run this script in Visual Studio / VS Code after installing required packages
+
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import yfinance as yf
+from datetime import datetime
+
+# 1. Download historical stock data (AAPL as example)
+ticker = 'AAPL'
+start_date = '2025-01-01'
+end_date = '2026-02-01'
+
+print(f"Downloading {ticker} data from {start_date} to {end_date}...")
+data = yf.download(ticker, start=start_date, end=end_date)
+df = data[['Close']].dropna()
+
+# 2. Normalize data manually (0-1 range)
+dataset = df.values.astype('float32')
+min_val = np.min(dataset)
+max_val = np.max(dataset)
+scaled = (dataset - min_val) / (max_val - min_val)
+
+# 3. Create sequences (60 days input -> predict next day)
+seq_length = 60
+
+def create_sequences(data, seq_len):
+    X, y = [], []
+    for i in range(len(data) - seq_len):
+        X.append(data[i:i + seq_len])
+        y.append(data[i + seq_len])
+    return np.array(X), np.array(y)
+
+X, y = create_sequences(scaled, seq_length)
+
+# 4. Train-test split (80% train, 20% test)
+train_size = int(len(X) * 0.8)
+X_train, X_test = X[:train_size], X[train_size:]
+y_train, y_test = y[:train_size], y[train_size:]
+
+# Convert to PyTorch tensors
+X_train = torch.from_numpy(X_train).float()
+y_train = torch.from_numpy(y_train).float()
+X_test = torch.from_numpy(X_test).float()
+y_test = torch.from_numpy(y_test).float()
+
+print(f"Training samples: {len(X_train)}, Test samples: {len(X_test)}")
+
+# 5. Define LSTM model
+class LSTMModel(nn.Module):
+    def __init__(self, input_size=1, hidden_size=50, num_layers=1, output_size=1):
+        super(LSTMModel, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        # Initialize hidden and cell states
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size)
+        # LSTM forward
+        out, _ = self.lstm(x, (h0, c0))
+        # Take last time step output and pass through fully connected layer
+        out = self.fc(out[:, -1, :])
+        return out
+
+model = LSTMModel()
+criterion = nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# 6. Training loop
+num_epochs = 50
+print("Starting training...")
+for epoch in range(num_epochs):
+    model.train()
+    outputs = model(X_train)
+    loss = criterion(outputs, y_train)
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    if (epoch + 1) % 10 == 0:
+        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.6f}')
+
+# 7. Evaluation on test set
+model.eval()
+with torch.no_grad():
+    predicted_scaled = model(X_test).numpy()
+
+# Inverse scaling to get real prices
+predicted = predicted_scaled * (max_val - min_val) + min_val
+actual = y_test.numpy() * (max_val - min_val) + min_val
+
+# 8. Print last 10 predictions vs actual
+print("\nLast 10 actual closing prices:")
+print(actual[-10:].flatten())
+
+print("\nLast 10 predicted closing prices:")
+print(predicted[-10:].flatten())
+
+print("\nTraining completed. You can modify ticker, seq_length, hidden_size, or num_epochs for further experiments.")
