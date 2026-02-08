@@ -11,8 +11,8 @@ from datetime import datetime
 
 # 1. Download historical stock data (AAPL as example)
 ticker = 'AAPL'
-start_date = '2025-01-01'
-end_date = '2026-02-01'
+start_date = '2015-01-01'
+end_date = '2025-12-31'
 
 print(f"Downloading {ticker} data from {start_date} to {end_date}...")
 data = yf.download(ticker, start=start_date, end=end_date)
