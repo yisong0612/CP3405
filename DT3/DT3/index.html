@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Stock Risk UI</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">AI</div>
+      <div>
+        <div class="brand-title">AI Stock Risk</div>
+        <div class="brand-sub">UI Prototype (S1 / S2 / Watchlist)</div>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Primary">
+      <button class="tab active" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="watchlist">Watchlist</button>
+      <button class="tab" data-view="compare">Compare</button>
+      <button class="tab" data-view="reports">Reports</button>
+      <button class="tab" data-view="settings">Settings</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- DASHBOARD (S1) -->
+    <section id="view-dashboard" class="view active">
+      <div class="section-header">
+        <h1>S1 — Stock Risk Dashboard</h1>
+        <div class="search-row">
+          <input id="s1Search" class="input" placeholder="Search ticker/company (e.g., AAPL)" />
+          <button class="btn" id="s1SearchBtn">Search</button>
+        </div>
+      </div>
+
+      <div class="grid kpis">
+        <div class="card kpi">
+          <div class="kpi-label">Risk Level</div>
+          <div id="kpiLevel" class="kpi-value badge high">High</div>
+        </div>
+
+        <div class="card kpi">
+          <div class="kpi-label">Risk Score (0–100)</div>
+          <div id="kpiScore" class="kpi-value">78</div>
+        </div>
+
+        <div class="card kpi">
+          <div class="kpi-label">Confidence (%)</div>
+          <div id="kpiConf" class="kpi-value">82%</div>
+        </div>
+
+        <div class="card kpi">
+          <div class="kpi-label">Last Update</div>
+          <div id="kpiUpdate" class="kpi-value small">2026-03-02 16:00</div>
+        </div>
+      </div>
+
+      <div class="grid s1-main">
+        <div class="card">
+          <h2 class="card-title">Risk Summary</h2>
+
+          <div class="row">
+            <div>
+              <div class="muted">Selected stock</div>
+              <div id="s1Selected" class="big">AAPL — Apple Inc.</div>
+            </div>
+            <div id="s1Badge" class="badge high">High</div>
+          </div>
+
+          <p id="s1Explain" class="explain">
+            Volatility is rising and drawdown is widening, so risk is upgraded.
+          </p>
+
+          <div class="btn-row">
+            <button class="btn primary" id="btnViewDetails">View Details</button>
+            <button class="btn" id="btnReport">Generate Report</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Quick Charts (placeholders)</h2>
+          <div class="chart-stack">
+            <div class="chart-box">Price</div>
+            <div class="chart-box">Rolling Volatility</div>
+            <div class="chart-box">Rolling Drawdown</div>
+          </div>
+          <div class="footnote">alerts + data coverage notes.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DETAIL (S2) -->
+    <section id="view-detail" class="view">
+      <div class="section-header">
+        <h1>S2 — Risk Score & Drivers</h1>
+
+        <div class="search-row">
+          <button class="btn" id="btnBackToS1">Back</button>
+          <div class="pill" id="s2HeaderStock">AAPL — Apple Inc.</div>
+          <button class="btn primary" id="btnAddToWatchlist">Add to Watchlist</button>
+        </div>
+
+        <div class="time-range">
+          <span class="muted">Time range:</span>
+          <button class="chip active">1M</button>
+          <button class="chip">3M</button>
+          <button class="chip">6M</button>
+          <button class="chip">1Y</button>
+          <button class="chip">3Y</button>
+        </div>
+      </div>
+
+      <div class="grid s2-main">
+        <!-- Left: output -->
+        <div class="card">
+          <h2 class="card-title">Risk Output</h2>
+          <div class="kv">
+            <div class="k">Risk Level</div><div id="s2Level" class="v badge high">High</div>
+            <div class="k">Risk Score</div><div id="s2Score" class="v">78</div>
+            <div class="k">Confidence</div><div id="s2Conf" class="v">82%</div>
+          </div>
+          <p class="explain" id="s2Meaning">
+            This stock shows higher downside risk in the next period.
+          </p>
+        </div>
+
+        <!-- Middle: drivers -->
+        <div class="card">
+          <h2 class="card-title">Key Drivers</h2>
+          <div class="drivers">
+            <div class="driver">20/60-day volatility is rising.</div>
+            <div class="driver">Max drawdown has widened.</div>
+            <div class="driver">More negative-return days recently.</div>
+            <div class="driver">High beta (market sensitive).</div>
+            <div class="driver">Weaker liquidity can amplify swings.</div>
+            <div class="driver">Negative sentiment / event risk increased.</div>
+          </div>
+          <div class="hint">These drivers explain why the label changes.</div>
+        </div>
+
+        <!-- Right: breakdown -->
+        <div class="card">
+          <h2 class="card-title">Breakdown & Rules</h2>
+
+          <div class="subblock">
+            <div class="sub-title">Risk Breakdown</div>
+            <div class="mini-grid">
+              <div>Market</div><div class="right"><span id="rbMarket">35%</span></div>
+              <div>Drawdown</div><div class="right"><span id="rbDrawdown">30%</span></div>
+              <div>Volatility</div><div class="right"><span id="rbVol">25%</span></div>
+              <div>Liquidity</div><div class="right"><span id="rbLiq">10%</span></div>
+            </div>
+          </div>
+
+          <div class="subblock">
+            <div class="sub-title">Key Metrics</div>
+            <div class="mini-grid">
+              <div>20D vol</div><div class="right"><span id="mVol20">48%</span></div>
+              <div>60D vol</div><div class="right"><span id="mVol60">39%</span></div>
+              <div>6M MDD</div><div class="right"><span id="mMDD6m">-28%</span></div>
+              <div>Beta</div><div class="right"><span id="mBeta">1.62</span></div>
+              <div>Volume change</div><div class="right"><span id="mVolChg">↑</span></div>
+            </div>
+          </div>
+
+          <div class="subblock">
+            <div class="sub-title">Risk Label Rules</div>
+            <ul class="rules">
+              <li><b>High</b>: forward 30D drawdown &gt; <span id="rHigh">12%</span></li>
+              <li><b>Medium</b>: <span id="rMedLo">6%</span> – <span id="rMedHi">12%</span></li>
+              <li><b>Low</b>: &lt; <span id="rLow">6%</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WATCHLIST -->
+    <section id="view-watchlist" class="view">
+      <div class="section-header">
+        <h1>Watchlist & Risk Monitoring</h1>
+
+        <div class="search-row">
+          <input id="wlSearch" class="input" placeholder="Search ticker/company" />
+          <button class="btn" id="wlFilterBtn">Filter by Risk</button>
+          <select id="wlRiskSelect" class="select" aria-label="Risk filter">
+            <option value="ALL">All</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="watchlistGrid" class="grid watchlist"></div>
+
+      <div class="note">
+        <b>Flow:</b> S2 → Add to Watchlist → Watchlist → View Details → S2
+      </div>
+    </section>
+
+    <!-- COMPARE -->
+    <section id="view-compare" class="view">
+      <div class="section-header">
+        <h1>Compare</h1>
+
+        <div class="search-row">
+          <input id="cmpInput" class="input" placeholder="Add ticker (e.g., AAPL)" />
+          <button class="btn" id="cmpAddBtn">Add Stock</button>
+
+          <select id="cmpMetric" class="select" aria-label="Compare metric">
+            <option value="score">Risk Score</option>
+            <option value="conf">Confidence</option>
+            <option value="d7">7D Change</option>
+          </select>
+
+          <select id="cmpRange" class="select" aria-label="Time range">
+            <option>1M</option><option>3M</option><option>6M</option><option>1Y</option><option>3Y</option>
+          </select>
+
+          <button class="btn primary" id="cmpGenBtn">Generate Comparison</button>
+        </div>
+      </div>
+
+      <div class="grid s1-main">
+        <div class="card">
+          <h2 class="card-title">Comparison Table</h2>
+          <div id="compareTable" class="table"></div>
+          <div class="footnote">Click View Details to open S2.</div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Charts (placeholders)</h2>
+          <div class="chart-stack">
+            <div class="chart-box">Risk score ranking</div>
+            <div class="chart-box">Risk trend (optional)</div>
+          </div>
+          <div class="footnote">UI layout only in this prototype.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="view-reports" class="view">
+      <div class="section-header">
+        <h1>Reports</h1>
+
+        <div class="search-row">
+          <select id="repTicker" class="select" aria-label="Select ticker"></select>
+
+          <select id="repRange" class="select" aria-label="Time range">
+            <option>1M</option><option>3M</option><option>6M</option><option>1Y</option><option>3Y</option>
+          </select>
+
+          <button class="btn primary" id="repGenBtn">Generate Report</button>
+          <button class="btn" id="repExportBtn">Export PDF</button>
+        </div>
+      </div>
+
+      <div class="grid s1-main">
+        <div class="card">
+          <h2 class="card-title">Include sections</h2>
+
+          <div class="checks">
+            <label><input type="checkbox" id="repCkSummary" checked /> Risk summary</label>
+            <label><input type="checkbox" id="repCkDrivers" checked /> Drivers (Top 6)</label>
+            <label><input type="checkbox" id="repCkMetrics" checked /> Metrics & Rules</label>
+            <label><input type="checkbox" id="repCkCharts" checked /> Charts (placeholders)</label>
+            <label><input type="checkbox" id="repCkDisclaimer" checked /> Disclaimer</label>
+          </div>
+
+          <div class="footnote">This prototype shows structure and export buttons (no real PDF).</div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Report Preview</h2>
+          <div id="reportPreview" class="preview">
+            <div class="muted">Click Generate Report to preview.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="view-settings" class="view">
+      <div class="section-header">
+        <h1>Settings</h1>
+        <div class="search-row">
+          <button class="btn primary" id="setSaveBtn">Save Changes</button>
+        </div>
+      </div>
+
+      <div class="grid settings">
+        <div class="card">
+          <h2 class="card-title">Display</h2>
+
+          <div class="kv">
+            <div class="k">Theme</div>
+            <div class="v">
+              <select id="setTheme" class="select">
+                <option value="dark" selected>Dark</option>
+                <option value="light">Light (placeholder)</option>
+              </select>
+            </div>
+
+            <div class="k">Language</div>
+            <div class="v">
+              <select id="setLang" class="select">
+                <option value="en" selected>English</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="footnote">UI-only settings in this prototype.</div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Alerts</h2>
+
+          <div class="checks">
+            <label><input type="checkbox" id="setAlertsOn" checked /> Enable alerts</label>
+            <label>Notify if Risk Score &gt; <input id="setScoreTh" class="mini-input" value="70" /></label>
+            <label><input type="checkbox" id="setHighOn" checked /> Notify if Risk Level = High</label>
+          </div>
+
+          <div class="footnote">Works with Watchlist filtering and monitoring.</div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Data & Update</h2>
+
+          <div class="kv">
+            <div class="k">Data source</div>
+            <div class="v">
+              <select id="setData" class="select">
+                <option value="price" selected>Price only</option>
+                <option value="price_news">Price + News (optional)</option>
+              </select>
+            </div>
+
+            <div class="k">Update frequency</div>
+            <div class="v">
+              <select id="setFreq" class="select">
+                <option value="daily" selected>Daily</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </div>
+
+            <div class="k">Last sync</div>
+            <div class="v" id="setSync">2026-03-02 16:00</div>
+          </div>
+
+          <button class="btn" id="setRefreshBtn">Refresh Data</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
