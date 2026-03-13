@@ -205,38 +205,42 @@
       </div>
 
       <div class="grid s2-main">
-        <div class="card">
-          <h2 class="card-title" data-i18n="s2_output">Risk Output</h2>
-          <div class="kv">
-            <div class="k" data-i18n="kpi_level">Risk Level</div>
-            <div id="s2Level" class="v badge high">High</div>
+        <div class="card s2-combined-card">
+          <div class="s2-combined-grid">
+            <section class="s2-combined-panel s2-output-panel">
+              <h2 class="card-title" data-i18n="s2_output">Risk Output</h2>
+              <div class="kv">
+                <div class="k" data-i18n="kpi_level">Risk Level</div>
+                <div id="s2Level" class="v badge high">High</div>
 
-            <div class="k" data-i18n="kpi_score_short">Risk Score</div>
-            <div id="s2Score" class="v">78</div>
+                <div class="k" data-i18n="kpi_score_short">Risk Score</div>
+                <div id="s2Score" class="v">78</div>
 
-            <div class="k" data-i18n="kpi_conf_short">Confidence</div>
-            <div id="s2Conf" class="v">82%</div>
+                <div class="k" data-i18n="kpi_conf_short">Confidence</div>
+                <div id="s2Conf" class="v">82%</div>
 
-            <div class="k" data-i18n="s2_7d">7D change</div>
-            <div id="s2D7" class="v num pos">+6</div>
+                <div class="k" data-i18n="s2_7d">7D change</div>
+                <div id="s2D7" class="v num pos">+6</div>
+              </div>
+
+              <p class="explain" id="s2Meaning">
+                This stock shows higher downside risk in the next period.
+              </p>
+            </section>
+
+            <section class="s2-combined-panel s2-drivers-panel">
+              <h2 class="card-title" data-i18n="s2_drivers">Key Drivers</h2>
+              <div class="drivers" id="s2DriversList">
+                <div class="driver">Driver 1</div>
+                <div class="driver">Driver 2</div>
+                <div class="driver">Driver 3</div>
+              </div>
+              <div class="hint" data-i18n="s2_driver_hint">These drivers explain why the label changes.</div>
+            </section>
           </div>
-
-          <p class="explain" id="s2Meaning">
-            This stock shows higher downside risk in the next period.
-          </p>
         </div>
 
-        <div class="card">
-          <h2 class="card-title" data-i18n="s2_drivers">Key Drivers</h2>
-          <div class="drivers" id="s2DriversList">
-            <div class="driver">Driver 1</div>
-            <div class="driver">Driver 2</div>
-            <div class="driver">Driver 3</div>
-          </div>
-          <div class="hint" data-i18n="s2_driver_hint">These drivers explain why the label changes.</div>
-        </div>
-
-        <div class="card">
+        <div class="card s2-side-card">
           <h2 class="card-title" data-i18n="s2_breakdown_rules">Breakdown & Rules</h2>
 
           <div class="subblock">
