@@ -285,7 +285,30 @@ Object.assign(I18N.en, {
   fc_summary_days: "Total Data Days",
   fc_conf_high: "High",
   fc_conf_medium: "Medium",
-  fc_conf_low: "Low"
+  fc_conf_low: "Low",
+  rep_status: "Status Snapshot",
+  rep_signal: "Signal Snapshot",
+  rep_data_mode_status: "Data mode",
+  rep_freq_status: "Update frequency",
+  rep_alerts_status: "Alerts",
+  rep_alert_state: "Alert state",
+  rep_sync_status: "Last sync",
+  rep_threshold_status: "Alert threshold",
+  rep_sections_status: "Included sections",
+  rep_on: "On",
+  rep_off: "Off",
+  rep_triggered: "Triggered",
+  rep_clear: "Clear",
+  rep_signal_price: "Price-only mode keeps the explanation focused on chart trend, volatility, drawdown, and volume behavior.",
+  rep_signal_news: "News mode adds a lightweight sentiment layer on top of price behavior.",
+  rep_headline_1: "Short-term flow stayed selective around the ticker.",
+  rep_headline_2: "Traders are watching volume confirmation before adding exposure.",
+  rep_headline_3: "Recent discussion stayed focused on near-term catalysts and risk control.",
+  rep_sent_pos: "Supportive",
+  rep_sent_neu: "Neutral",
+  rep_sent_neg: "Cautious",
+  set_status_ready: "Current mode: {mode} · Refresh: {freq} · Alerts: {alerts}",
+  set_status_saved: "Settings now affect reports, dashboard text, watchlist alerts, and auto-refresh speed."
 });
 
 Object.assign(I18N.zh, {
@@ -313,7 +336,30 @@ Object.assign(I18N.zh, {
   fc_summary_days: "数据天数",
   fc_conf_high: "高",
   fc_conf_medium: "中",
-  fc_conf_low: "低"
+  fc_conf_low: "低",
+  rep_status: "状态摘要",
+  rep_signal: "信号摘要",
+  rep_data_mode_status: "数据模式",
+  rep_freq_status: "更新频率",
+  rep_alerts_status: "提醒状态",
+  rep_alert_state: "触发情况",
+  rep_sync_status: "最后同步",
+  rep_threshold_status: "提醒阈值",
+  rep_sections_status: "已包含部分",
+  rep_on: "开启",
+  rep_off: "关闭",
+  rep_triggered: "已触发",
+  rep_clear: "正常",
+  rep_signal_price: "仅价格模式会把解释集中在价格走势、波动、回撤和成交量行为上。",
+  rep_signal_news: "新闻模式会在价格行为之外，再加入一个轻量情绪判断层。",
+  rep_headline_1: "短线资金对该股票仍然偏选择性参与。",
+  rep_headline_2: "交易者更关注成交量是否继续配合当前走势。",
+  rep_headline_3: "近期讨论重点仍集中在短期催化与风险控制。",
+  rep_sent_pos: "偏正面",
+  rep_sent_neu: "中性",
+  rep_sent_neg: "偏谨慎",
+  set_status_ready: "当前模式：{mode} · 刷新：{freq} · 提醒：{alerts}",
+  set_status_saved: "这些设置现在会影响报告右侧内容、首页摘要、观察名单提醒和自动刷新速度。"
 });
 
 let currentLang = "en";
@@ -327,6 +373,20 @@ let lastFetchedHistoryMeta = null;
 const FORCE_LOCAL_DEMO_HISTORY = true;
 let watchlist = ["AAPL", "300750.SZ", "600519.SS", "TSLA", "NVDA"];
 let compareList = ["AAPL", "300750.SZ", "600519.SS"];
+const DEFAULT_UI_SETTINGS = {
+  theme: "dark",
+  lang: "en",
+  alertsOn: true,
+  scoreTh: 70,
+  highOn: true,
+  dataSource: "price",
+  updateFreq: "daily",
+  lastSyncTs: 0,
+  refreshNonce: 0
+};
+const DEFAULT_WATCHLIST = ["AAPL", "300750.SZ", "600519.SS", "TSLA", "NVDA"];
+const DEFAULT_COMPARE_LIST = ["AAPL", "300750.SZ", "600519.SS"];
+let uiSettings = { ...DEFAULT_UI_SETTINGS };
 
 const STOCKS = {
   AAPL: { ticker: "AAPL", name: "Apple Inc.", level: "LOW", score: 35, conf: 76, d7: -7 },
@@ -540,6 +600,245 @@ function applyTheme(theme) {
   document.body.classList.remove("light-theme", "dark-theme");
   document.body.classList.add(theme === "light" ? "light-theme" : "dark-theme");
   localStorage.setItem("theme", theme);
+}
+
+function loadUISettings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("uiSettings") || "null");
+    if (raw && typeof raw === "object") {
+      return {
+        ...DEFAULT_UI_SETTINGS,
+        ...raw,
+        alertsOn: raw.alertsOn !== false,
+        highOn: raw.highOn !== false,
+        scoreTh: clamp(Number(raw.scoreTh ?? DEFAULT_UI_SETTINGS.scoreTh), 1, 100),
+        lastSyncTs: Number(raw.lastSyncTs || 0),
+        refreshNonce: Number(raw.refreshNonce || 0)
+      };
+    }
+  } catch (e) {
+    console.warn("Failed to load uiSettings:", e);
+  }
+  return { ...DEFAULT_UI_SETTINGS };
+}
+
+function persistUISettings() {
+  localStorage.setItem("uiSettings", JSON.stringify(uiSettings));
+}
+
+function markSyncNow({ bumpVersion = false } = {}) {
+  uiSettings.lastSyncTs = Date.now();
+  if (bumpVersion) uiSettings.refreshNonce = Number(uiSettings.refreshNonce || 0) + 1;
+  persistUISettings();
+  const sync = document.getElementById("setSync");
+  if (sync) sync.textContent = formatSyncTime(uiSettings.lastSyncTs);
+  updateSettingsLiveStatus();
+}
+
+function loadArrayStorage(key, fallback) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(key) || "null");
+    if (Array.isArray(raw) && raw.length) return ensureUnique(raw.map(v => String(v || "").trim().toUpperCase()).filter(Boolean));
+  } catch (e) {
+    console.warn(`Failed to load ${key}:`, e);
+  }
+  return [...fallback];
+}
+
+function persistArrayStorage(key, list) {
+  localStorage.setItem(key, JSON.stringify(ensureUnique((list || []).map(v => String(v || "").trim().toUpperCase()).filter(Boolean))));
+}
+
+function loadAppState() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("appState") || "null");
+    if (raw && typeof raw === "object") {
+      return {
+        selectedTicker: String(raw.selectedTicker || selectedTicker || "AAPL").trim().toUpperCase() || "AAPL",
+        currentRange: ["1M","3M","6M","1Y","3Y"].includes(raw.currentRange) ? raw.currentRange : currentRange,
+        currentForecastDays: clamp(Number(raw.currentForecastDays || currentForecastDays || 7), 1, 60)
+      };
+    }
+  } catch (e) {
+    console.warn("Failed to load appState:", e);
+  }
+  return {
+    selectedTicker: selectedTicker || "AAPL",
+    currentRange,
+    currentForecastDays
+  };
+}
+
+function persistAppState() {
+  localStorage.setItem("appState", JSON.stringify({
+    selectedTicker,
+    currentRange,
+    currentForecastDays
+  }));
+}
+
+function persistCollections() {
+  persistArrayStorage("watchlist", watchlist);
+  persistArrayStorage("compareList", compareList);
+  persistAppState();
+}
+
+function collectUISettingsFromDom() {
+  return {
+    theme: document.getElementById("setTheme")?.value || uiSettings.theme,
+    lang: document.getElementById("setLang")?.value || uiSettings.lang,
+    alertsOn: !!document.getElementById("setAlertsOn")?.checked,
+    scoreTh: clamp(Number(document.getElementById("setScoreTh")?.value || uiSettings.scoreTh), 1, 100),
+    highOn: !!document.getElementById("setHighOn")?.checked,
+    dataSource: document.getElementById("setData")?.value || uiSettings.dataSource,
+    updateFreq: document.getElementById("setFreq")?.value || uiSettings.updateFreq,
+  };
+}
+
+function formatSyncTime(ts) {
+  const n = Number(ts || 0);
+  if (!Number.isFinite(n) || n <= 0) return '-';
+  try {
+    return new Date(n).toLocaleString();
+  } catch (e) {
+    return '-';
+  }
+}
+
+function syncSettingsForm() {
+  const theme = document.getElementById("setTheme");
+  if (theme) theme.value = uiSettings.theme;
+  const lang = document.getElementById("setLang");
+  if (lang) lang.value = uiSettings.lang;
+  const alertsOn = document.getElementById("setAlertsOn");
+  if (alertsOn) alertsOn.checked = !!uiSettings.alertsOn;
+  const scoreTh = document.getElementById("setScoreTh");
+  if (scoreTh) scoreTh.value = String(uiSettings.scoreTh);
+  const highOn = document.getElementById("setHighOn");
+  if (highOn) highOn.checked = !!uiSettings.highOn;
+  const data = document.getElementById("setData");
+  if (data) data.value = uiSettings.dataSource;
+  const freq = document.getElementById("setFreq");
+  if (freq) freq.value = uiSettings.updateFreq;
+  const sync = document.getElementById("setSync");
+  if (sync) sync.textContent = formatSyncTime(uiSettings.lastSyncTs);
+}
+
+function getDataSourceLabel() {
+  return uiSettings.dataSource === "price_news" ? t("source_news") : t("source_price");
+}
+
+function getUpdateFrequencyLabel() {
+  return uiSettings.updateFreq === "weekly" ? t("freq_weekly") : t("freq_daily");
+}
+
+function getAutoRefreshMs() {
+  return uiSettings.updateFreq === "weekly" ? 45000 : 15000;
+}
+
+function getIncludedReportSections() {
+  const list = [];
+  if (document.getElementById("repCkSummary")?.checked) list.push(t("rep_summary"));
+  if (document.getElementById("repCkDrivers")?.checked) list.push(t("rep_drivers"));
+  if (document.getElementById("repCkMetrics")?.checked) list.push(t("rep_metrics"));
+  if (document.getElementById("repCkCharts")?.checked) list.push(t("rep_charts"));
+  if (document.getElementById("repCkDisclaimer")?.checked) list.push(t("rep_disclaimer"));
+  return list;
+}
+
+function getAlertStateForPrediction(pred) {
+  const enabled = !!uiSettings.alertsOn;
+  const highHit = !!uiSettings.highOn && String(pred?.level || "") === "HIGH";
+  const scoreHit = Number(pred?.score || 0) >= Number(uiSettings.scoreTh || 70);
+  const triggered = enabled && (highHit || scoreHit);
+  let reason = currentLang === "zh" ? "未触发" : "No alert";
+  if (triggered) {
+    reason = highHit
+      ? (currentLang === "zh" ? "达到高风险等级" : "Risk level reached High")
+      : (currentLang === "zh" ? `评分达到阈值 ${uiSettings.scoreTh}` : `Risk score reached ${uiSettings.scoreTh}`);
+  }
+  return { enabled, triggered, reason };
+}
+
+function buildNewsInsightPack(ticker, pred) {
+  const seed = hashTickerSeed(`news:${ticker}:${currentRange}:${uiSettings.dataSource}:${uiSettings.refreshNonce || 0}`);
+  const moodScore = ((seed % 9) - 4) + (Number(pred?.d7 || 0) > 0 ? 1 : Number(pred?.d7 || 0) < 0 ? -1 : 0);
+  const sentimentKey = moodScore >= 2 ? "pos" : moodScore <= -2 ? "neg" : "neu";
+  const sentiment = sentimentKey === "pos" ? t("rep_sent_pos") : sentimentKey === "neg" ? t("rep_sent_neg") : t("rep_sent_neu");
+  const headlines = [t("rep_headline_1"), t("rep_headline_2"), t("rep_headline_3")].map((line, idx) => {
+    const variants = [
+      currentLang === "zh" ? `${line}（信号 ${idx + 1}）` : `${line} (signal ${idx + 1})`,
+      currentLang === "zh" ? `${line}（近端观察）` : `${line} (near-term view)`,
+      currentLang === "zh" ? `${line}（风控角度）` : `${line} (risk view)`
+    ];
+    return variants[(seed + idx) % variants.length];
+  });
+  const summary = sentimentKey === "pos"
+    ? (currentLang === "zh" ? "情绪面对短线表现略有支撑。" : "Sentiment adds a mild supportive tilt to the short-term setup.")
+    : sentimentKey === "neg"
+    ? (currentLang === "zh" ? "情绪面偏谨慎，需要继续观察确认。" : "Sentiment is cautious, so further confirmation is still needed.")
+    : (currentLang === "zh" ? "情绪面中性，当前仍以价格信号为主。" : "Sentiment is neutral, so price action still carries more weight.");
+  return { sentimentKey, sentiment, headlines, summary };
+}
+
+function applySettingsContextToPrediction(pred) {
+  const newsPack = buildNewsInsightPack(pred.ticker, pred);
+  pred.settingContext = {
+    dataSource: uiSettings.dataSource,
+    updateFreq: uiSettings.updateFreq,
+    alertState: getAlertStateForPrediction(pred),
+    newsPack
+  };
+
+  if (uiSettings.dataSource === "price_news") {
+    const extraDriver = currentLang === "zh"
+      ? `新闻情绪：${newsPack.sentiment}`
+      : `News sentiment: ${newsPack.sentiment}`;
+    pred.drivers = [extraDriver, ...(pred.drivers || [])].slice(0, 6);
+    pred.advice = `${pred.advice} ${newsPack.summary}`.trim();
+    pred.conf = clamp(Number(pred.conf || 0) + (newsPack.sentimentKey === "pos" ? 2 : newsPack.sentimentKey === "neg" ? -1 : 1), 35, 96);
+  }
+
+  return pred;
+}
+
+function fillTemplate(str, data) {
+  return String(str || "").replace(/\{(\w+)\}/g, (_, key) => safeText(data[key], ""));
+}
+
+function updateSettingsLiveStatus() {
+  const box = document.getElementById("settingsLiveStatus");
+  if (!box) return;
+  const alertsLabel = uiSettings.alertsOn ? t("rep_on") : t("rep_off");
+  box.className = "footnote settings-live-status";
+  const waitSec = Math.max(1, Math.round(getAutoRefreshMs() / 1000));
+  const nextHint = currentLang === 'zh' ? `自动刷新约每 ${waitSec} 秒执行一次。` : `Auto refresh runs about every ${waitSec} seconds.`;
+  const syncHint = currentLang === 'zh' ? `最后同步：${formatSyncTime(uiSettings.lastSyncTs)}` : `Last sync: ${formatSyncTime(uiSettings.lastSyncTs)}`;
+  box.innerHTML = `${escapeHtml(fillTemplate(t("set_status_ready"), { mode: getDataSourceLabel(), freq: getUpdateFrequencyLabel(), alerts: alertsLabel }))}<br>${escapeHtml(nextHint)}<br>${escapeHtml(syncHint)}<br>${escapeHtml(t("set_status_saved"))}`;
+}
+
+async function rerenderGeneratedReportIfNeeded() {
+  const reportPreview = document.getElementById("reportPreview");
+  if (reportPreview?.dataset.generated === "1") {
+    const ticker = document.getElementById("repTicker")?.value || selectedTicker;
+    const repRange = document.getElementById("repRange")?.value || currentRange;
+    reportPreview.innerHTML = await buildReportPreview(ticker, repRange);
+  }
+}
+
+async function applyRuntimeSettings(options = {}) {
+  uiSettings = { ...uiSettings, ...collectUISettingsFromDom() };
+  persistUISettings();
+  applyTheme(uiSettings.theme);
+  updateSettingsLiveStatus();
+  startAutoRefresh();
+
+  if (options.refresh !== false) {
+    const pred = await predictRiskOnline(selectedTicker, currentRange);
+    applyPrediction(pred);
+    await requestAndRenderForecast(selectedTicker, currentRange, currentForecastDays);
+    await rerenderGeneratedReportIfNeeded();
+  }
 }
 
 function getCompareXLabels(range) {
@@ -758,6 +1057,9 @@ function buildSummaryText(pred) {
   const advice = buildActionAdvice(pred);
   const vol20 = Number(pred?.metrics?.vol20 || 0);
   const mdd6m = Number(pred?.metrics?.mdd6m || 0);
+  const modeNote = uiSettings.dataSource === "price_news"
+    ? (currentLang === "zh" ? ` 当前已启用“${getDataSourceLabel()}”模式，说明中会额外参考情绪信号。` : ` ${getDataSourceLabel()} mode is enabled, so the explanation also references a light sentiment signal.`)
+    : (currentLang === "zh" ? ` 当前使用“${getDataSourceLabel()}”模式，解释主要基于价格、波动与成交量。` : ` ${getDataSourceLabel()} mode is active, so the explanation stays focused on price, volatility, and volume.`);
 
   if (currentLang === "zh") {
     const base = pred.level === "HIGH"
@@ -766,7 +1068,7 @@ function buildSummaryText(pred) {
       ? `短期风险中等（波动与回撤信号较混合，20日波动约 ${Math.round(vol20)}%）。`
       : `短期风险较低（近阶段相对稳定，20日波动约 ${Math.round(vol20)}%，回撤约 ${mdd6m.toFixed(1)}%）。`;
 
-    return `${base}${advice}`;
+    return `${base}${advice}${modeNote}`;
   }
 
   const base = pred.level === "HIGH"
@@ -775,7 +1077,7 @@ function buildSummaryText(pred) {
     ? `Moderate short-term risk with mixed volatility and drawdown signals (20D vol about ${Math.round(vol20)}%).`
     : `Lower short-term risk with relatively steadier recent behavior (20D vol about ${Math.round(vol20)}%, drawdown about ${mdd6m.toFixed(1)}%).`;
 
-  return `${base} ${advice}`;
+  return `${base} ${advice}${modeNote}`;
 }
 
 
@@ -875,7 +1177,7 @@ function generateOfflineHistory(ticker, range) {
   const profile = getTickerProfile(ticker);
   const cfg = getRangeConfig(range);
   const pattern = getTickerPatternConfig(profile);
-  const rand = seededRandom(hashTickerSeed(`${profile.clean}:${range}:history:v4`));
+  const rand = seededRandom(hashTickerSeed(`${profile.clean}:${range}:history:v4:${uiSettings.refreshNonce || 0}`));
   const shockMap = buildShockMap(cfg.points, profile.seed ^ hashTickerSeed(`${range}:detail`), cfg.shockScale * pattern.shockBoost);
   const end = new Date();
   const series = [];
@@ -1749,7 +2051,7 @@ async function predictRiskOnline(ticker, range) {
   }
 
   pred.advice = buildActionAdvice(pred);
-  return pred;
+  return applySettingsContextToPrediction(pred);
 }
 
 function renderDriversPanel(pred) {
@@ -1928,6 +2230,10 @@ function renderWatchlist() {
     const card = document.createElement("div");
     card.className = "wcard";
     const d7Class = s.d7 > 0 ? "pos" : s.d7 < 0 ? "neg" : "neu";
+    const alertState = getAlertStateForPrediction(s);
+    const alertHtml = alertState.enabled
+      ? `<div class="w-alert"><span class="muted">${currentLang === "zh" ? "提醒" : "Alert"}:</span> <span class="report-chip ${alertState.triggered ? "high" : "low"}">${escapeHtml(alertState.triggered ? t("rep_triggered") : t("rep_clear"))}</span></div>`
+      : `<div class="w-alert"><span class="muted">${currentLang === "zh" ? "提醒" : "Alert"}:</span> <span class="report-chip off">${escapeHtml(t("rep_off"))}</span></div>`;
 
     card.innerHTML = `
       <div class="w-top">
@@ -1941,6 +2247,7 @@ function renderWatchlist() {
       <div class="w-mid">
         <div><span class="muted">${currentLang === "zh" ? "评分" : "Score"}:</span> <b>${safeText(s.score, 0)}</b></div>
         <div><span class="muted">7D:</span> <b class="num ${d7Class}">${fmt7d(s.d7)}</b></div>
+        ${alertHtml}
       </div>
 
       <div class="w-actions">
@@ -1968,6 +2275,7 @@ function renderWatchlist() {
 
       if (action === "remove") {
         watchlist = watchlist.filter(t => t !== ticker);
+        persistCollections();
         renderWatchlist();
       }
     });
@@ -2156,10 +2464,57 @@ function initReportsDropdown() {
   if (repRange) repRange.value = currentRange;
 }
 
+function formatReportPrice(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '-';
+  return num.toFixed(num >= 100 ? 1 : 2);
+}
+
+function buildRealtimeReportSidebarData(pred, rangeOverride = currentRange) {
+  const historySummary = buildHistorySummary(pred.historySeries || []);
+  const latestClose = Number(historySummary.endPrice);
+  const projectionSummary = buildProjectionSummary(pred.projectedSeries || [], latestClose);
+  const targetPrice = Number(projectionSummary?.endPrice || latestClose || 0);
+  const projectedMove = Number(projectionSummary?.priceChangePct || 0);
+  const recentCloses = (pred.historySeries || []).slice(-Math.min(20, (pred.historySeries || []).length)).map(p => Number(p.close)).filter(Number.isFinite);
+  const support = recentCloses.length ? Math.min(...recentCloses) : latestClose;
+  const resistance = recentCloses.length ? Math.max(...recentCloses) : latestClose;
+  const amplitudePct = recentCloses.length >= 2 && recentCloses[0] !== 0 ? pctChange(Math.min(...recentCloses), Math.max(...recentCloses)) : 0;
+  const momentum20 = Number(pred?.metrics?.momentum20 || 0);
+  const vol20 = Number(pred?.metrics?.vol20 || 0);
+  const trendText = currentLang === 'zh'
+    ? projectedMove > 1.2 ? '短线预计延续偏强走势。' : projectedMove < -1.2 ? '短线预计继续承压。' : '短线预计以震荡整理为主。'
+    : projectedMove > 1.2 ? 'Near-term trend still leans upward.' : projectedMove < -1.2 ? 'Near-term trend still leans downward.' : 'Near-term trend remains broadly sideways.';
+  const momentumText = currentLang === 'zh'
+    ? `20日动量 ${momentum20 >= 0 ? '偏正' : '偏负'}，20日年化波动约 ${Math.round(vol20)}%。`
+    : `20D momentum is ${momentum20 >= 0 ? 'positive' : 'negative'}, with 20D annualized vol near ${Math.round(vol20)}%.`;
+  const targetDirection = localizedForecastDirection(projectedMove > 1.2 ? 'Bullish' : projectedMove < -1.2 ? 'Bearish' : 'Sideways');
+  return {
+    latestClose,
+    historySummary,
+    projectionSummary,
+    targetPrice,
+    projectedMove,
+    support,
+    resistance,
+    amplitudePct: Number(amplitudePct.toFixed(1)),
+    trendText,
+    momentumText,
+    targetDirection,
+    rangeOverride
+  };
+}
+
 async function buildReportPreview(ticker, rangeOverride = currentRange) {
   const pred = await predictRiskOnline(ticker, rangeOverride);
   const ck = (id) => document.getElementById(id)?.checked;
   const chartSvg = buildMiniChartSvg(pred.series);
+  const includedSections = getIncludedReportSections();
+  const alertState = getAlertStateForPrediction(pred);
+  const newsPack = pred.settingContext?.newsPack || buildNewsInsightPack(ticker, pred);
+  const syncText = document.getElementById("setSync")?.textContent || new Date().toLocaleString();
+  const statusChipClass = alertState.triggered ? "high" : "low";
+  const sidebarData = buildRealtimeReportSidebarData(pred, rangeOverride);
 
   const parts = [];
 
@@ -2240,30 +2595,76 @@ async function buildReportPreview(ticker, rangeOverride = currentRange) {
 
       <aside class="report-side">
         <div class="report-side-card">
-          <div class="report-side-title">${escapeHtml(t("rep_notes"))}</div>
+          <div class="report-side-title">${escapeHtml(currentLang === "zh" ? "实时摘要" : "Live Summary")}</div>
           <div class="report-side-text">
-            ${currentLang === "zh"
-              ? "左侧显示正文内容，右侧显示摘要与状态信息。这样可以让报告页面更完整，也更接近正式系统界面。"
-              : "The left side shows the main report content, while the right side shows summary and status information. This makes the report page look more complete and system-like."}
+            ${escapeHtml(sidebarData.trendText)}
           </div>
+          <div class="report-side-block muted">${escapeHtml(sidebarData.momentumText)}</div>
+          <div class="report-side-block muted">${escapeHtml(currentLang === "zh" ? `已按 ${pred.ticker} + ${rangeOverride} 重新生成右侧状态。` : `Sidebar refreshed for ${pred.ticker} + ${rangeOverride}.`)}</div>
         </div>
 
         <div class="report-side-card">
           <div class="report-side-title">${escapeHtml(t("rep_quick"))}</div>
-          <div class="report-side-text">
-            <div><span class="muted">Ticker:</span> <b>${escapeHtml(pred.ticker)}</b></div>
-            <div><span class="muted">${currentLang === "zh" ? "等级" : "Level"}:</span> <b>${escapeHtml(levelToText(pred.level))}</b></div>
-            <div><span class="muted">${currentLang === "zh" ? "评分" : "Score"}:</span> <b>${pred.score}</b></div>
-            <div><span class="muted">${currentLang === "zh" ? "置信度" : "Confidence"}:</span> <b>${pred.conf}%</b></div>
-            <div><span class="muted">${currentLang === "zh" ? "范围" : "Range"}:</span> <b>${escapeHtml(rangeOverride)}</b></div>
-            <div><span class="muted">7D:</span> <b class="${pred.d7 > 0 ? "num pos" : pred.d7 < 0 ? "num neg" : "num neu"}">${fmt7d(pred.d7)}</b></div>
-            <div class="report-advice"><span class="muted">${escapeHtml(t("rep_rec"))}:</span> ${escapeHtml(pred.advice)}</div>
+          <div class="report-side-text report-side-kv">
+            <div class="report-side-row"><span class="report-side-label">Ticker</span><span class="report-side-value">${escapeHtml(pred.ticker)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "等级" : "Level")}</span><span class="report-side-value">${escapeHtml(levelToText(pred.level))}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "评分" : "Score")}</span><span class="report-side-value">${pred.score}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "置信度" : "Confidence")}</span><span class="report-side-value">${pred.conf}%</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "范围" : "Range")}</span><span class="report-side-value">${escapeHtml(rangeOverride)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">7D</span><span class="report-side-value ${pred.d7 > 0 ? "pos" : pred.d7 < 0 ? "neg" : "neu"}">${fmt7d(pred.d7)}</span></div>
           </div>
+          <div class="report-side-block report-advice"><span class="muted">${escapeHtml(t("rep_rec"))}:</span> ${escapeHtml(pred.advice)}</div>
         </div>
 
         <div class="report-side-card">
-          <div class="report-side-title">${escapeHtml(t("rep_layout"))}</div>
-          <div class="report-side-text">${escapeHtml(t("rep_layout_text"))}</div>
+          <div class="report-side-title">${escapeHtml(currentLang === "zh" ? "价格状态" : "Price Status")}</div>
+          <div class="report-side-text report-side-kv">
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "最新价" : "Latest")}</span><span class="report-side-value">${formatReportPrice(sidebarData.latestClose)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "区间起点" : "Range Start")}</span><span class="report-side-value">${formatReportPrice(sidebarData.historySummary.startPrice)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "区间终点" : "Range End")}</span><span class="report-side-value">${formatReportPrice(sidebarData.historySummary.endPrice)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "区间涨跌" : "Range Change")}</span><span class="report-side-value ${Number(sidebarData.historySummary.priceChangePct || 0) > 0 ? "pos" : Number(sidebarData.historySummary.priceChangePct || 0) < 0 ? "neg" : "neu"}">${fmtSignedPct(Number(sidebarData.historySummary.priceChangePct || 0), 1)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "区间最高" : "Range High")}</span><span class="report-side-value">${formatReportPrice(sidebarData.historySummary.highestPrice)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "区间最低" : "Range Low")}</span><span class="report-side-value">${formatReportPrice(sidebarData.historySummary.lowestPrice)}</span></div>
+          </div>
+          <div class="report-side-block muted">${escapeHtml(currentLang === "zh" ? `该区间共 ${sidebarData.historySummary.totalDataDays} 个数据点，振幅约 ${sidebarData.amplitudePct}% 。` : `${sidebarData.historySummary.totalDataDays} points in this range, with a swing of about ${sidebarData.amplitudePct}%.`)}</div>
+        </div>
+
+        <div class="report-side-card">
+          <div class="report-side-title">${escapeHtml(currentLang === "zh" ? "预测状态" : "Forecast Status")}</div>
+          <div class="report-side-text report-side-kv">
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "预测方向" : "Direction")}</span><span class="report-side-value">${escapeHtml(sidebarData.targetDirection)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "目标价" : "Target Price")}</span><span class="report-side-value">${formatReportPrice(sidebarData.targetPrice)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "预期涨跌" : "Projected Move")}</span><span class="report-side-value ${sidebarData.projectedMove > 0 ? "pos" : sidebarData.projectedMove < 0 ? "neg" : "neu"}">${fmtSignedPct(sidebarData.projectedMove, 1)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "短线支撑" : "Support")}</span><span class="report-side-value">${formatReportPrice(sidebarData.support)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "短线阻力" : "Resistance")}</span><span class="report-side-value">${formatReportPrice(sidebarData.resistance)}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(currentLang === "zh" ? "预测天数" : "Forecast Days")}</span><span class="report-side-value">${currentLang === "zh" ? `${currentForecastDays}天` : `${currentForecastDays}D`}</span></div>
+          </div>
+          <div class="report-side-block muted">${escapeHtml(currentLang === "zh" ? `该预测会随着股票、时间范围和预测天数变化而更新。` : `This forecast updates when the ticker, range, or forecast horizon changes.`)}</div>
+        </div>
+
+        <div class="report-side-card">
+          <div class="report-side-title">${escapeHtml(t("rep_status"))}</div>
+          <div class="report-side-text report-side-kv">
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(t("rep_data_mode_status"))}</span><span class="report-side-value">${escapeHtml(getDataSourceLabel())}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(t("rep_freq_status"))}</span><span class="report-side-value">${escapeHtml(getUpdateFrequencyLabel())}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(t("rep_alerts_status"))}</span><span class="report-side-value"><span class="report-chip ${uiSettings.alertsOn ? "on" : "off"}">${escapeHtml(uiSettings.alertsOn ? t("rep_on") : t("rep_off"))}</span></span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(t("rep_threshold_status"))}</span><span class="report-side-value">${uiSettings.scoreTh}</span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(t("rep_alert_state"))}</span><span class="report-side-value"><span class="report-chip ${statusChipClass}">${escapeHtml(alertState.triggered ? t("rep_triggered") : t("rep_clear"))}</span></span></div>
+            <div class="report-side-row"><span class="report-side-label">${escapeHtml(t("rep_sync_status"))}</span><span class="report-side-value">${escapeHtml(syncText)}</span></div>
+          </div>
+          <div class="report-side-block muted">${escapeHtml(alertState.reason)}</div>
+        </div>
+
+        <div class="report-side-card">
+          <div class="report-side-title">${escapeHtml(t("rep_signal"))}</div>
+          <div class="report-side-text">
+            <div><span class="report-chip ${newsPack.sentimentKey === "pos" ? "low" : newsPack.sentimentKey === "neg" ? "high" : "medium"}">${escapeHtml(newsPack.sentiment)}</span></div>
+            <div class="report-side-block">${escapeHtml(uiSettings.dataSource === "price_news" ? t("rep_signal_news") : t("rep_signal_price"))}</div>
+            <div class="report-side-block muted">${escapeHtml(newsPack.summary)}</div>
+            <div class="report-news-list">
+              ${newsPack.headlines.map(item => `<div class="report-news-item">${escapeHtml(item)}</div>`).join("")}
+            </div>
+          </div>
         </div>
       </aside>
     </div>
@@ -2272,6 +2673,8 @@ async function buildReportPreview(ticker, rangeOverride = currentRange) {
 
 async function applyLanguage(lang) {
   currentLang = lang;
+  uiSettings.lang = lang;
+  persistUISettings();
   document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
   document.title = t("app_title");
 
@@ -2300,12 +2703,15 @@ async function applyLanguage(lang) {
 
   if (lastForecastResult) renderForecastCard(lastForecastResult);
 
+  syncSettingsForm();
+  updateSettingsLiveStatus();
   renderWatchlist();
   renderCompare();
 }
 
 async function setRange(range) {
   currentRange = range;
+  persistAppState();
 
   document.querySelectorAll(".chip[data-range]").forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-range") === range);
@@ -2375,12 +2781,12 @@ function startAutoRefresh() {
     try {
       await refreshDashboardData();
       await refreshCompareData();
-      const setSync = document.getElementById("setSync");
-      if (setSync) setSync.textContent = new Date().toLocaleString();
+      markSyncNow({ bumpVersion: true });
+      await rerenderGeneratedReportIfNeeded();
     } catch (e) {
       console.error("Auto refresh failed:", e);
     }
-  }, 10000);
+  }, getAutoRefreshMs());
 }
 
 function stopAutoRefresh() {
@@ -2415,6 +2821,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         btn.textContent = currentLang === "zh" ? "加载中..." : "Loading...";
         const pred = await predictRiskOnline(ticker, currentRange);
         applyPrediction(pred);
+        persistAppState();
         await requestAndRenderForecast(ticker, currentRange, currentForecastDays);
         input.value = ticker;
       } catch (e) {
@@ -2460,6 +2867,7 @@ if (forecastDaysInput) {
   forecastDaysInput.value = String(currentForecastDays);
   forecastDaysInput.addEventListener("change", async (e) => {
     currentForecastDays = clamp(Number(e.target.value || 7), 1, 60);
+    persistAppState();
     e.target.value = String(currentForecastDays);
     const tickerLabel = document.getElementById("forecastTickerLabel");
     if (tickerLabel) tickerLabel.textContent = currentLang === "zh" ? `${selectedTicker} • ${currentForecastDays}天` : `${selectedTicker} • ${currentForecastDays}D`;
@@ -2479,6 +2887,7 @@ document.getElementById("forecastBtn")?.addEventListener("click", async () => {
   const btn = document.getElementById("forecastBtn");
   const inputDays = document.getElementById("forecastDays");
   currentForecastDays = clamp(Number(inputDays?.value || 7), 1, 60);
+  persistAppState();
   if (inputDays) inputDays.value = String(currentForecastDays);
   if (btn) {
     btn.disabled = true;
@@ -2501,6 +2910,7 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
   document.getElementById("btnViewDetails")?.addEventListener("click", async () => {
     const searchTicker = (document.getElementById("s1Search")?.value || selectedTicker || "").trim().toUpperCase();
     if (searchTicker) selectedTicker = searchTicker;
+    persistAppState();
     const pred = await predictRiskOnline(selectedTicker, currentRange);
     applyPrediction(pred);
     await requestAndRenderForecast(selectedTicker, currentRange, currentForecastDays);
@@ -2517,6 +2927,8 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
   document.getElementById("btnAddToWatchlist")?.addEventListener("click", () => {
     if (!watchlist.includes(selectedTicker)) watchlist.unshift(selectedTicker);
     watchlist = ensureUnique(watchlist);
+    persistCollections();
+    renderWatchlist();
     switchView("watchlist");
   });
 
@@ -2553,6 +2965,7 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
     applyPrediction(pred);
     compareList.push(v);
     compareList = ensureUnique(compareList);
+    persistCollections();
 
     const cmpInput = document.getElementById("cmpInput");
     if (cmpInput) cmpInput.value = "";
@@ -2580,35 +2993,130 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
     alert(currentLang === "zh" ? "原型演示：导出 PDF 仍是占位功能。" : "Prototype: Export PDF is still a placeholder.");
   });
 
-  document.getElementById("setSaveBtn")?.addEventListener("click", () => {
-    const theme = document.getElementById("setTheme")?.value || "dark";
-    applyTheme(theme);
-    alert(currentLang === "zh" ? "设置已保存" : "Settings saved.");
+  document.getElementById("repTicker")?.addEventListener("change", async (e) => {
+    selectedTicker = String(e.target.value || selectedTicker).toUpperCase();
+    persistAppState();
+    const reportPreview = document.getElementById("reportPreview");
+    if (reportPreview) {
+      const repRange = document.getElementById("repRange")?.value || currentRange;
+      reportPreview.innerHTML = await buildReportPreview(selectedTicker, repRange);
+      reportPreview.dataset.generated = "1";
+    }
+  });
+
+  document.getElementById("repRange")?.addEventListener("change", async (e) => {
+    const repRange = e.target.value || currentRange;
+    currentRange = repRange;
+    persistAppState();
+    const reportPreview = document.getElementById("reportPreview");
+    if (reportPreview) {
+      const ticker = document.getElementById("repTicker")?.value || selectedTicker;
+      reportPreview.innerHTML = await buildReportPreview(ticker, repRange);
+      reportPreview.dataset.generated = "1";
+    }
+  });
+
+  document.getElementById("setSaveBtn")?.addEventListener("click", async () => {
+    const nextSettings = collectUISettingsFromDom();
+    const langChanged = nextSettings.lang !== currentLang;
+    uiSettings = { ...uiSettings, ...nextSettings };
+    persistUISettings();
+    applyTheme(uiSettings.theme);
+    if (langChanged) {
+      await applyLanguage(uiSettings.lang);
+    }
+    markSyncNow({ bumpVersion: true });
+    await applyRuntimeSettings();
+    persistCollections();
+    alert(currentLang === "zh" ? "设置已保存。数据来源、刷新频率和提醒阈值现在都会真正影响页面内容。" : "Settings saved. Data source, refresh frequency, and alert thresholds now actively affect the page.");
   });
 
   document.getElementById("setRefreshBtn")?.addEventListener("click", async () => {
-    const sync = document.getElementById("setSync");
-    if (sync) sync.textContent = new Date().toLocaleString();
+    markSyncNow({ bumpVersion: true });
+    persistAppState();
     await refreshDashboardData();
     await refreshCompareData();
-    alert(currentLang === "zh" ? "已刷新（原型）" : "Data refreshed (prototype).");
+    await requestAndRenderForecast(selectedTicker, currentRange, currentForecastDays);
+    await rerenderGeneratedReportIfNeeded();
+    alert(currentLang === "zh" ? "已刷新。当前股票、右侧报告、观察名单评分和最后同步时间都已更新。" : "Data refreshed. Current ticker, report sidebar, watchlist scores, and last sync time were updated.");
   });
 
   document.getElementById("setLang")?.addEventListener("change", async (e) => {
+    uiSettings.lang = e.target.value;
+    persistUISettings();
     await applyLanguage(e.target.value);
   });
 
-  const themeSelect = document.getElementById("setTheme");
-  if (themeSelect) {
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    themeSelect.value = savedTheme;
-    applyTheme(savedTheme);
-    themeSelect.addEventListener("change", (e) => {
-      applyTheme(e.target.value);
-    });
-  }
+  document.getElementById("setTheme")?.addEventListener("change", async (e) => {
+    uiSettings.theme = e.target.value;
+    persistUISettings();
+    applyTheme(e.target.value);
+    updateSettingsLiveStatus();
+    await rerenderGeneratedReportIfNeeded();
+  });
 
-  await applyLanguage("en");
+  document.getElementById("setData")?.addEventListener("change", async () => {
+    markSyncNow({ bumpVersion: true });
+    await applyRuntimeSettings();
+    const msg = currentLang === 'zh'
+      ? (uiSettings.dataSource === 'price_news' ? '已切换到“价格 + 新闻”，报告右侧会加入情绪/新闻信号。' : '已切换到“仅价格”，页面将只显示价格驱动内容。')
+      : (uiSettings.dataSource === 'price_news' ? 'Switched to Price + News. The report sidebar now includes sentiment/news signals.' : 'Switched to Price only. The page now focuses on price-driven content.');
+    alert(msg);
+  });
+
+  document.getElementById("setFreq")?.addEventListener("change", async () => {
+    markSyncNow({ bumpVersion: false });
+    await applyRuntimeSettings({ refresh: false });
+    await rerenderGeneratedReportIfNeeded();
+    const sec = Math.round(getAutoRefreshMs() / 1000);
+    alert(currentLang === 'zh' ? `刷新频率已切换为${getUpdateFrequencyLabel()}，自动刷新约每 ${sec} 秒执行一次。` : `Refresh frequency changed to ${getUpdateFrequencyLabel()}. Auto refresh now runs about every ${sec} seconds.`);
+  });
+
+  document.getElementById("setAlertsOn")?.addEventListener("change", async () => {
+    await applyRuntimeSettings({ refresh: false });
+    renderWatchlist();
+    await rerenderGeneratedReportIfNeeded();
+  });
+
+  document.getElementById("setHighOn")?.addEventListener("change", async () => {
+    await applyRuntimeSettings({ refresh: false });
+    renderWatchlist();
+    await rerenderGeneratedReportIfNeeded();
+  });
+
+  document.getElementById("setScoreTh")?.addEventListener("change", async (e) => {
+    e.target.value = String(clamp(Number(e.target.value || uiSettings.scoreTh), 1, 100));
+    await applyRuntimeSettings({ refresh: false });
+    renderWatchlist();
+    await rerenderGeneratedReportIfNeeded();
+  });
+
+  uiSettings = loadUISettings();
+  if (!uiSettings.lastSyncTs) {
+    uiSettings.lastSyncTs = Date.now();
+    persistUISettings();
+  }
+  watchlist = loadArrayStorage("watchlist", DEFAULT_WATCHLIST);
+  compareList = loadArrayStorage("compareList", DEFAULT_COMPARE_LIST);
+  const appState = loadAppState();
+  selectedTicker = appState.selectedTicker;
+  currentRange = appState.currentRange;
+  currentForecastDays = appState.currentForecastDays;
+  syncSettingsForm();
+  applyTheme(uiSettings.theme);
+  updateSettingsLiveStatus();
+
+  await applyLanguage(uiSettings.lang || "en");
+  persistCollections();
+
+  const s1SearchInit = document.getElementById("s1Search");
+  if (s1SearchInit) s1SearchInit.value = selectedTicker;
+  const repRangeInit = document.getElementById("repRange");
+  if (repRangeInit) repRangeInit.value = currentRange;
+  const cmpRangeInit = document.getElementById("cmpRange");
+  if (cmpRangeInit) cmpRangeInit.value = currentRange;
+  const tickerLabelInit = document.getElementById("forecastTickerLabel");
+  if (tickerLabelInit) tickerLabelInit.textContent = currentLang === "zh" ? `${selectedTicker} • ${currentForecastDays}天` : `${selectedTicker} • ${currentForecastDays}D`;
   await setRange("1M");
 
   const pred = await predictRiskOnline(selectedTicker, currentRange);

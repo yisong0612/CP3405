@@ -278,8 +278,34 @@ body.light-theme option {
 }
 
 .s2-main {
-  grid-template-columns: 0.9fr 1fr 1.05fr;
-  align-items: start;
+  grid-template-columns: minmax(0, 1.9fr) minmax(320px, 1.05fr);
+  align-items: stretch;
+}
+
+.s2-combined-card,
+.s2-side-card {
+  height: 100%;
+}
+
+.s2-combined-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 18px;
+  height: 100%;
+}
+
+.s2-combined-panel {
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 8px);
+  padding: 20px;
+  height: 100%;
+}
+
+.s2-output-panel,
+.s2-drivers-panel {
+  display: flex;
+  flex-direction: column;
 }
 
 .settings {
@@ -803,6 +829,90 @@ body.light-theme option {
   overflow-wrap: anywhere;
 }
 
+.report-side-kv {
+  display: grid;
+  gap: 8px;
+}
+
+.report-side-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.report-side-row:last-child {
+  border-bottom: none;
+}
+
+.report-side-label {
+  color: var(--muted);
+}
+
+.report-side-value {
+  text-align: right;
+  font-weight: 700;
+}
+
+.report-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.report-chip.on,
+.report-chip.low {
+  background: var(--badge-low-bg);
+  color: var(--badge-low-text);
+}
+
+.report-chip.medium {
+  background: var(--badge-med-bg);
+  color: var(--badge-med-text);
+}
+
+.report-chip.high,
+.report-chip.off {
+  background: var(--badge-high-bg);
+  color: var(--badge-high-text);
+}
+
+.report-side-block {
+  margin-top: 10px;
+}
+
+.report-news-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.report-news-item {
+  border: 1px solid var(--border);
+  background: var(--soft);
+  border-radius: 12px;
+  padding: 10px 12px;
+  line-height: 1.55;
+}
+
+.settings-live-status {
+  margin-top: 10px;
+}
+
+.w-alert {
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 12px;
+}
+
 .report-driver-list {
   display: grid;
   gap: 10px;
@@ -1057,6 +1167,10 @@ body.light-theme option {
   .s1-main {
     grid-template-columns: 1fr;
   }
+
+  .s2-combined-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 860px) {
@@ -1084,6 +1198,10 @@ body.light-theme option {
   }
 
   .card {
+    padding: 18px;
+  }
+
+  .s2-combined-panel {
     padding: 18px;
   }
 
