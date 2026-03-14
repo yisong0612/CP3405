@@ -371,8 +371,8 @@ let currentForecastDays = 7;
 let lastForecastResult = null;
 let lastFetchedHistoryMeta = null;
 const FORCE_LOCAL_DEMO_HISTORY = true;
-let watchlist = ["AAPL", "300750.SZ", "600519.SS", "TSLA", "NVDA"];
-let compareList = ["AAPL", "300750.SZ", "600519.SS"];
+let watchlist = [];
+let compareList = [];
 const DEFAULT_UI_SETTINGS = {
   theme: "dark",
   lang: "en",
@@ -382,8 +382,8 @@ const DEFAULT_UI_SETTINGS = {
   dataSource: "price",
   updateFreq: "daily"
 };
-const DEFAULT_WATCHLIST = ["AAPL", "300750.SZ", "600519.SS", "TSLA", "NVDA"];
-const DEFAULT_COMPARE_LIST = ["AAPL", "300750.SZ", "600519.SS"];
+const DEFAULT_WATCHLIST = [];
+const DEFAULT_COMPARE_LIST = [];
 let uiSettings = { ...DEFAULT_UI_SETTINGS };
 
 const STOCKS = {
@@ -625,7 +625,9 @@ function persistUISettings() {
 function loadArrayStorage(key, fallback) {
   try {
     const raw = JSON.parse(localStorage.getItem(key) || "null");
-    if (Array.isArray(raw) && raw.length) return ensureUnique(raw.map(v => String(v || "").trim().toUpperCase()).filter(Boolean));
+    if (Array.isArray(raw)) {
+      return ensureUnique(raw.map(v => String(v || "").trim().toUpperCase()).filter(Boolean));
+    }
   } catch (e) {
     console.warn(`Failed to load ${key}:`, e);
   }
@@ -634,6 +636,52 @@ function loadArrayStorage(key, fallback) {
 
 function persistArrayStorage(key, list) {
   localStorage.setItem(key, JSON.stringify(ensureUnique((list || []).map(v => String(v || "").trim().toUpperCase()).filter(Boolean))));
+}
+
+const LEGACY_DEFAULT_WATCHLIST = ["AAPL", "300750.SZ", "600519.SS", "TSLA", "NVDA"];
+const LEGACY_DEFAULT_COMPARE_LIST = ["AAPL", "300750.SZ", "600519.SS"];
+
+function resetLegacyListIfNeeded(key, legacy) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(key) || "null");
+    if (
+      Array.isArray(raw) &&
+      raw.length === legacy.length &&
+      raw.every((v, i) => String(v || "").trim().toUpperCase() === legacy[i])
+    ) {
+      localStorage.setItem(key, JSON.stringify([]));
+    }
+  } catch (e) {
+    console.warn(`Failed to reset legacy ${key}:`, e);
+  }
+}
+
+function removeLegacyDefaultCollections() {
+  resetLegacyListIfNeeded("watchlist", LEGACY_DEFAULT_WATCHLIST);
+  resetLegacyListIfNeeded("compareList", LEGACY_DEFAULT_COMPARE_LIST);
+}
+
+function ensureStockEntry(ticker) {
+  const cleanTicker = String(ticker || "").trim().toUpperCase();
+  if (!cleanTicker) return null;
+  if (STOCKS[cleanTicker]) return STOCKS[cleanTicker];
+
+  const profile = getTickerProfile(cleanTicker);
+  const seededScore = clamp(Math.round(18 + ((profile.seed >> 3) % 68)), 8, 92);
+  const seededD7 = Number((((((profile.seed >> 7) % 140) - 70) / 10)).toFixed(1));
+  const seededConf = clamp(Math.round(62 + ((profile.seed >> 11) % 24)), 58, 92);
+  const seededLevel = deriveLevelFromScore(seededScore);
+
+  STOCKS[cleanTicker] = {
+    ticker: cleanTicker,
+    name: cleanTicker,
+    level: seededLevel,
+    score: seededScore,
+    conf: seededConf,
+    d7: seededD7,
+  };
+
+  return STOCKS[cleanTicker];
 }
 
 function loadAppState() {
@@ -2188,7 +2236,7 @@ function renderWatchlist() {
   const risk = document.getElementById("wlRiskSelect")?.value || "ALL";
 
   const items = watchlist
-    .map(ticker => STOCKS[ticker])
+    .map(ticker => ensureStockEntry(ticker))
     .filter(Boolean)
     .filter(s => {
       const hit = `${s.ticker} ${s.name}`.toLowerCase().includes(q);
@@ -2259,7 +2307,7 @@ function renderCompareRanking() {
   if (!box) return;
 
   const items = compareList
-    .map(ticker => STOCKS[ticker])
+    .map(ticker => ensureStockEntry(ticker))
     .filter(Boolean)
     .sort((a, b) => b.score - a.score);
 
@@ -2289,7 +2337,7 @@ function renderCompareTrend() {
   dotsGroup.innerHTML = "";
   labelsGroup.innerHTML = "";
 
-  const items = compareList.map(ticker => STOCKS[ticker]).filter(Boolean);
+  const items = compareList.map(ticker => ensureStockEntry(ticker)).filter(Boolean);
   if (!items.length) return;
 
   const labels = getCompareXLabels(currentRange);
@@ -2382,7 +2430,8 @@ function renderCompare() {
   const box = document.getElementById("compareTable");
   if (!box) return;
 
-  compareList = ensureUnique(compareList).filter(ticker => STOCKS[ticker]);
+  compareList = ensureUnique(compareList).map(ticker => String(ticker || "").trim().toUpperCase()).filter(Boolean);
+  compareList.forEach(ensureStockEntry);
 
   if (!compareList.length) {
     box.innerHTML = `<div class="muted">${currentLang === "zh" ? "未选择股票。" : "No stocks selected."}</div>`;
@@ -2899,7 +2948,10 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
   document.getElementById("btnBackToS1")?.addEventListener("click", () => switchView("dashboard"));
 
   document.getElementById("btnAddToWatchlist")?.addEventListener("click", () => {
-    if (!watchlist.includes(selectedTicker)) watchlist.unshift(selectedTicker);
+    const cleanTicker = String(selectedTicker || "").trim().toUpperCase();
+    if (!cleanTicker) return;
+    ensureStockEntry(cleanTicker);
+    if (!watchlist.includes(cleanTicker)) watchlist.unshift(cleanTicker);
     watchlist = ensureUnique(watchlist);
     persistCollections();
     renderWatchlist();
@@ -2935,6 +2987,7 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
     const v = (document.getElementById("cmpInput")?.value || "").trim().toUpperCase();
     if (!v) return;
 
+    ensureStockEntry(v);
     const pred = await predictRiskOnline(v, currentRange);
     applyPrediction(pred);
     compareList.push(v);
@@ -3060,13 +3113,17 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
     await rerenderGeneratedReportIfNeeded();
   });
 
+  removeLegacyDefaultCollections();
   uiSettings = loadUISettings();
   watchlist = loadArrayStorage("watchlist", DEFAULT_WATCHLIST);
   compareList = loadArrayStorage("compareList", DEFAULT_COMPARE_LIST);
+  watchlist.forEach(ensureStockEntry);
+  compareList.forEach(ensureStockEntry);
   const appState = loadAppState();
   selectedTicker = appState.selectedTicker;
   currentRange = appState.currentRange;
   currentForecastDays = appState.currentForecastDays;
+  ensureStockEntry(selectedTicker);
   syncSettingsForm();
   applyTheme(uiSettings.theme);
   updateSettingsLiveStatus();
