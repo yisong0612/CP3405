@@ -87,7 +87,7 @@ const I18N = {
     rep_metrics: "Metrics & Rules",
     rep_charts: "Charts",
     rep_disclaimer: "Disclaimer",
-    rep_note: "This prototype shows the structure and export buttons only (no real PDF export).",
+    rep_note: "Select sections, generate the report, then click Export PDF to open your browser's Save as PDF dialog.",
     rep_preview: "Report Preview",
     rep_preview_hint: "Click Generate Report to preview.",
     rep_exec: "Executive summary",
@@ -97,7 +97,7 @@ const I18N = {
     rep_quick: "Quick Summary",
     rep_layout: "Layout Purpose",
     rep_layout_text: "This layout fills the right side and makes the page look more complete and system-like.",
-    rep_chart_caption: "Mini risk trend chart",
+    rep_chart_caption: "Price trend & forecast chart",
 
     set_title: "Settings",
     btn_save: "Save Changes",
@@ -214,7 +214,7 @@ const I18N = {
     rep_metrics: "指标与规则",
     rep_charts: "图表",
     rep_disclaimer: "免责声明",
-    rep_note: "本原型展示结构和导出按钮（无真实 PDF 导出）。",
+    rep_note: "先勾选部分并生成报告，再点导出PDF，会打开浏览器的另存为 PDF 对话框。",
     rep_preview: "报告预览",
     rep_preview_hint: "点击“生成报告”以预览。",
     rep_exec: "执行摘要",
@@ -224,7 +224,7 @@ const I18N = {
     rep_quick: "快速摘要",
     rep_layout: "布局目的",
     rep_layout_text: "这样可以让右侧不再留白，同时让报告界面更完整、更像正式系统。",
-    rep_chart_caption: "迷你风险趋势图",
+    rep_chart_caption: "价格趋势与预测图",
 
     set_title: "背景设定",
     btn_save: "保存更改",
@@ -1983,6 +1983,80 @@ function buildMiniChartSvg(series) {
   `;
 }
 
+function buildReportPriceChartSvg(historySeries = [], projectedSeries = [], ticker = selectedTicker, rangeOverride = currentRange) {
+  const history = (historySeries || []).map((p) => ({ t: p?.t, close: Number(p?.close) })).filter((p) => Number.isFinite(p.close));
+  const projected = (projectedSeries || []).map((p) => ({ t: p?.t, close: Number(p?.close) })).filter((p) => Number.isFinite(p.close));
+  const all = [...history, ...projected];
+  if (!all.length) {
+    return `<div class="report-chart-empty">${escapeHtml(currentLang === "zh" ? "暂无图表数据。" : "No chart data yet.")}</div>`;
+  }
+
+  const w = 760;
+  const h = 280;
+  const padLeft = 72;
+  const padRight = 30;
+  const padTop = 26;
+  const padBottom = 44;
+  const innerW = w - padLeft - padRight;
+  const innerH = h - padTop - padBottom;
+
+  let minV = Math.min(...all.map((p) => p.close));
+  let maxV = Math.max(...all.map((p) => p.close));
+  const span = Math.max(1, maxV - minV);
+  const padValue = Math.max(0.8, span * 0.12);
+  minV = Math.max(0, minV - padValue);
+  maxV = maxV + padValue;
+
+  const totalPoints = Math.max(1, all.length - 1);
+  const pointToXY = (point, idx) => {
+    const x = padLeft + (idx / totalPoints) * innerW;
+    const y = padTop + (1 - ((point.close - minV) / Math.max(1e-9, maxV - minV))) * innerH;
+    return { x, y };
+  };
+
+  const histPts = history.map((p, i) => pointToXY(p, i));
+  const projPts = projected.map((p, i) => pointToXY(p, history.length - 1 + i + 1));
+  const histLine = histPts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const projLine = projected.length && histPts.length
+    ? [histPts[histPts.length - 1], ...projPts].map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")
+    : "";
+  const latestPt = projPts[projPts.length - 1] || histPts[histPts.length - 1];
+  const latestVal = projected[projected.length - 1]?.close ?? history[history.length - 1]?.close ?? 0;
+  const histStart = history[0]?.t ? String(history[0].t).slice(0, 10) : "Start";
+  const midSource = all[Math.floor((all.length - 1) / 2)]?.t ? String(all[Math.floor((all.length - 1) / 2)].t).slice(0, 10) : "Middle";
+  const endSource = (projected[projected.length - 1]?.t || history[history.length - 1]?.t) ? String(projected[projected.length - 1]?.t || history[history.length - 1]?.t).slice(0, 10) : "End";
+  const area = projected.length && histPts.length ? [
+    `${histPts[histPts.length - 1].x.toFixed(1)},${(padTop + innerH).toFixed(1)}`,
+    `${histPts[histPts.length - 1].x.toFixed(1)},${histPts[histPts.length - 1].y.toFixed(1)}`,
+    ...projPts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`),
+    `${projPts[projPts.length - 1].x.toFixed(1)},${(padTop + innerH).toFixed(1)}`,
+  ].join(" ") : "";
+
+  return `
+    <div class="report-cover-chart-head">
+      <div class="report-cover-chart-title">${escapeHtml(buildPreviewTickerLabel(ticker, rangeOverride))}</div>
+      <div class="report-cover-chart-latest">${escapeHtml(t("latest"))} ${formatReportPrice(latestVal)}</div>
+    </div>
+    <svg viewBox="0 0 ${w} ${h}" class="report-cover-chart" preserveAspectRatio="xMidYMid meet" aria-label="report chart">
+      <line x1="${padLeft}" y1="${padTop}" x2="${padLeft + innerW}" y2="${padTop}" class="report-grid-line"></line>
+      <line x1="${padLeft}" y1="${padTop + innerH / 2}" x2="${padLeft + innerW}" y2="${padTop + innerH / 2}" class="report-grid-line"></line>
+      <line x1="${padLeft}" y1="${padTop + innerH}" x2="${padLeft + innerW}" y2="${padTop + innerH}" class="report-grid-line"></line>
+      <line x1="${padLeft}" y1="${padTop}" x2="${padLeft}" y2="${padTop + innerH}" class="report-axis-line"></line>
+      <line x1="${padLeft}" y1="${padTop + innerH}" x2="${padLeft + innerW}" y2="${padTop + innerH}" class="report-axis-line"></line>
+      ${area ? `<polygon points="${area}" class="report-cover-proj-area"></polygon>` : ""}
+      <polyline points="${histLine}" class="report-cover-hist-line"></polyline>
+      ${projLine ? `<polyline points="${projLine}" class="report-cover-proj-line"></polyline>` : ""}
+      ${latestPt ? `<circle cx="${latestPt.x.toFixed(1)}" cy="${latestPt.y.toFixed(1)}" r="6" class="report-cover-dot"></circle>` : ""}
+      <text x="${padLeft - 12}" y="${padTop + 4}" text-anchor="end" class="report-axis-text">${formatReportPrice(maxV)}</text>
+      <text x="${padLeft - 12}" y="${padTop + innerH / 2 + 4}" text-anchor="end" class="report-axis-text">${formatReportPrice((maxV + minV) / 2)}</text>
+      <text x="${padLeft - 12}" y="${padTop + innerH + 4}" text-anchor="end" class="report-axis-text">${formatReportPrice(minV)}</text>
+      <text x="${padLeft}" y="${h - 10}" text-anchor="start" class="report-axis-text">${escapeHtml(histStart)}</text>
+      <text x="${padLeft + innerW / 2}" y="${h - 10}" text-anchor="middle" class="report-axis-text">${escapeHtml(midSource)}</text>
+      <text x="${padLeft + innerW}" y="${h - 10}" text-anchor="end" class="report-axis-text">${escapeHtml(endSource)}</text>
+    </svg>
+  `;
+}
+
 function predictRisk(ticker) {
   ticker = (ticker || "").trim().toUpperCase();
 
@@ -2426,6 +2500,14 @@ function renderCompareTrend() {
   });
 }
 
+function removeCompareTicker(ticker) {
+  const cleanTicker = String(ticker || "").trim().toUpperCase();
+  if (!cleanTicker) return;
+  compareList = compareList.filter((item) => String(item || "").trim().toUpperCase() !== cleanTicker);
+  persistCollections();
+  renderCompare();
+}
+
 function renderCompare() {
   const box = document.getElementById("compareTable");
   if (!box) return;
@@ -2452,7 +2534,10 @@ function renderCompare() {
         <div><span class="muted">${currentLang === "zh" ? "评分" : "Score"}:</span> <b>${safeText(s.score, 0)}</b></div>
         <div><span class="muted">${currentLang === "zh" ? "置信度" : "Confidence"}:</span> <b>${safeText(s.conf, 0)}%</b></div>
         <div><span class="muted">7D:</span> <b class="num ${d7Class}">${fmt7d(s.d7)}</b></div>
-        <button class="btn primary cmpDetails" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "查看详情" : "View Details"}</button>
+        <div class="cmp-actions">
+          <button class="btn primary cmpDetails" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "查看详情" : "View Details"}</button>
+          <button class="btn cmpRemove" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "删除" : "Remove"}</button>
+        </div>
       </div>
     `;
   }).join("");
@@ -2463,6 +2548,12 @@ function renderCompare() {
       const pred = await predictRiskOnline(ticker, currentRange);
       applyPrediction(pred);
       switchView("detail");
+    });
+  });
+
+  box.querySelectorAll(".cmpRemove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      removeCompareTicker(btn.dataset.ticker);
     });
   });
 
@@ -2529,7 +2620,8 @@ function buildRealtimeReportSidebarData(pred, rangeOverride = currentRange) {
 async function buildReportPreview(ticker, rangeOverride = currentRange) {
   const pred = await predictRiskOnline(ticker, rangeOverride);
   const ck = (id) => document.getElementById(id)?.checked;
-  const chartSvg = buildMiniChartSvg(pred.series);
+  const chartSvg = buildReportPriceChartSvg(pred.historySeries || [], pred.projectedSeries || [], pred.ticker, rangeOverride);
+  const riskSvg = buildMiniChartSvg(pred.series);
   const includedSections = getIncludedReportSections();
   const alertState = getAlertStateForPrediction(pred);
   const newsPack = pred.settingContext?.newsPack || buildNewsInsightPack(ticker, pred);
@@ -2586,8 +2678,8 @@ async function buildReportPreview(ticker, rangeOverride = currentRange) {
       <div class="pblock">
         <b>4) ${escapeHtml(t("rep_charts"))}</b>
         <div class="report-chart-wrap">
-          <div class="report-chart-title">${escapeHtml(t("rep_chart_caption"))}</div>
-          ${chartSvg}
+          <div class="report-chart-title">${escapeHtml(currentLang === "zh" ? "风险评分迷你图" : "Mini risk score chart")}</div>
+          ${riskSvg}
         </div>
       </div>
     `);
@@ -2607,9 +2699,15 @@ async function buildReportPreview(ticker, rangeOverride = currentRange) {
   return `
     <div class="report-two-col">
       <div class="report-main">
-        <div class="pblock">
-          <b>${escapeHtml(t("rep_report_for"))}</b>
-          ${escapeHtml(pred.ticker)} — ${escapeHtml(STOCKS[pred.ticker]?.name || pred.name)}
+        <div class="pblock report-cover-card">
+          <div class="report-cover-top">
+            <div>
+              <div class="report-cover-for"><b>${escapeHtml(t("rep_report_for"))}</b></div>
+              <div class="report-cover-name">${escapeHtml(pred.ticker)} — ${escapeHtml(STOCKS[pred.ticker]?.name || pred.name)}</div>
+            </div>
+            <div class="report-cover-meta">${escapeHtml(currentLang === "zh" ? `范围：${rangeOverride}` : `Range: ${rangeOverride}`)}</div>
+          </div>
+          ${ck("repCkCharts") ? `<div class="report-cover-chart-wrap">${chartSvg}</div>` : `<div class="report-cover-placeholder">${escapeHtml(currentLang === "zh" ? "已关闭图表部分；重新勾选“图表”即可显示价格趋势与预测图。" : "Charts are hidden. Re-enable the Charts section to show the price trend and forecast image.")}</div>`}
         </div>
         ${parts.join("")}
       </div>
@@ -2690,6 +2788,77 @@ async function buildReportPreview(ticker, rangeOverride = currentRange) {
       </aside>
     </div>
   `;
+}
+
+async function rerenderReportIfGenerated() {
+  const reportPreview = document.getElementById("reportPreview");
+  if (!reportPreview?.dataset || reportPreview.dataset.generated !== "1") return;
+  const ticker = document.getElementById("repTicker")?.value || selectedTicker;
+  const repRange = document.getElementById("repRange")?.value || currentRange;
+  reportPreview.innerHTML = await buildReportPreview(ticker, repRange);
+  reportPreview.dataset.generated = "1";
+}
+
+function openReportPrintWindow(reportHtml, titleText) {
+  const printWindow = window.open("", "_blank", "width=1100,height=900");
+  if (!printWindow) {
+    alert(currentLang === "zh" ? "浏览器阻止了新窗口，请允许弹窗后再导出 PDF。" : "Your browser blocked the new window. Please allow pop-ups and try again.");
+    return;
+  }
+  const stylesheetHref = new URL("./styles.css", window.location.href).href;
+  printWindow.document.write(`<!doctype html>
+<html lang="${currentLang === "zh" ? "zh-CN" : "en"}">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${escapeHtml(titleText)}</title>
+<link rel="stylesheet" href="${stylesheetHref}">
+<style>
+  body { background: #fff !important; color: #111827 !important; margin: 0; padding: 20px; }
+  .report-print-shell { max-width: 1100px; margin: 0 auto; }
+  .report-print-title { font-size: 28px; font-weight: 800; margin: 0 0 16px; color: #111827; }
+  .report-print-meta { margin: 0 0 18px; color: #4b5563; }
+  .report-two-col { display: block !important; }
+  .report-side { margin-top: 18px; }
+  .pblock, .report-side-card { break-inside: avoid; page-break-inside: avoid; background: #fff !important; border-color: #d1d5db !important; }
+  .report-mini-chart, .report-cover-chart { background: #fff !important; }
+  .report-grid-line { stroke: #d1d5db !important; }
+  .report-axis-line { stroke: #6b7280 !important; }
+  .report-axis-text, .report-side-label, .muted { color: #4b5563 !important; fill: #4b5563 !important; }
+  .report-mini-line, .report-cover-hist-line { stroke: #2563eb !important; }
+  .report-mini-dot, .report-cover-dot { fill: #2563eb !important; }
+  .report-cover-proj-line { stroke: #ef4444 !important; }
+  .report-cover-proj-area { fill: rgba(239,68,68,0.10) !important; }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+  <div class="report-print-shell">
+    <div class="report-print-title">${escapeHtml(titleText)}</div>
+    <div class="report-print-meta">${escapeHtml(currentLang === "zh" ? "导出时间：" : "Export time: ")} ${escapeHtml(new Date().toLocaleString())}</div>
+    ${reportHtml}
+  </div>
+</body>
+</html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  const triggerPrint = () => {
+    try { printWindow.print(); } catch (err) { console.error(err); }
+  };
+  printWindow.onload = () => setTimeout(triggerPrint, 350);
+}
+
+async function exportCurrentReportAsPdf() {
+  const reportPreview = document.getElementById("reportPreview");
+  const ticker = document.getElementById("repTicker")?.value || selectedTicker;
+  const repRange = document.getElementById("repRange")?.value || currentRange;
+  if (!reportPreview) return;
+  if (reportPreview.dataset.generated !== "1") {
+    reportPreview.innerHTML = await buildReportPreview(ticker, repRange);
+    reportPreview.dataset.generated = "1";
+  }
+  const reportTitle = `${currentLang === "zh" ? "AI股票风险报告" : "AI Stock Risk Report"} - ${ticker} - ${repRange}`;
+  openReportPrintWindow(reportPreview.innerHTML, reportTitle);
 }
 
 async function applyLanguage(lang) {
@@ -3016,8 +3185,14 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
     reportPreview.dataset.generated = "1";
   });
 
-  document.getElementById("repExportBtn")?.addEventListener("click", () => {
-    alert(currentLang === "zh" ? "原型演示：导出 PDF 仍是占位功能。" : "Prototype: Export PDF is still a placeholder.");
+  document.getElementById("repExportBtn")?.addEventListener("click", async () => {
+    await exportCurrentReportAsPdf();
+  });
+
+  ["repCkSummary", "repCkDrivers", "repCkMetrics", "repCkCharts", "repCkDisclaimer"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("change", async () => {
+      await rerenderReportIfGenerated();
+    });
   });
 
   document.getElementById("repTicker")?.addEventListener("change", async (e) => {

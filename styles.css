@@ -793,6 +793,97 @@ body.light-theme option {
   min-height: 220px;
 }
 
+.report-cover-card {
+  padding: 18px;
+}
+
+.report-cover-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.report-cover-for {
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.report-cover-name {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.report-cover-meta {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.report-cover-chart-wrap {
+  margin-top: 8px;
+}
+
+.report-cover-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.report-cover-chart-title {
+  font-weight: 700;
+}
+
+.report-cover-chart-latest {
+  color: var(--muted);
+}
+
+.report-cover-chart {
+  width: 100%;
+  height: 320px;
+  display: block;
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.report-cover-hist-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 3;
+}
+
+.report-cover-proj-line {
+  fill: none;
+  stroke: #f28b82;
+  stroke-width: 3;
+  stroke-dasharray: 8 8;
+  stroke-linecap: round;
+}
+
+.report-cover-proj-area {
+  fill: rgba(242, 139, 130, 0.14);
+}
+
+.report-cover-dot {
+  fill: var(--primary);
+  stroke: var(--card);
+  stroke-width: 2;
+}
+
+.report-cover-placeholder,
+.report-chart-empty {
+  border: 1px dashed var(--border);
+  background: var(--soft);
+  border-radius: 14px;
+  padding: 18px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+
 .report-two-col {
   display: grid;
   grid-template-columns: 1.45fr 0.95fr;
@@ -1222,4 +1313,33 @@ body.light-theme option {
   .chart-text {
     font-size: 15px;
   }
+}
+
+
+@media (max-width: 900px) {
+  .report-cover-top,
+  .report-cover-chart-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .report-cover-chart {
+    height: 260px;
+  }
+}
+
+
+.cmp-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cmp-actions .btn {
+  flex: 1 1 180px;
+}
+
+.cmpRemove {
+  background: transparent;
+  border: 1px solid var(--border);
 }
