@@ -1329,17 +1329,69 @@ body.light-theme option {
 }
 
 
-.cmp-actions {
+.watchlist-manage-row {
+  margin-top: 12px;
+}
+
+.watchlist-manage-row .input {
+  min-width: 260px;
+}
+
+.note.compact {
+  margin-top: 10px;
+  padding: 10px 12px;
+}
+
+.note.compact.saved {
+  border-color: rgba(116, 224, 164, 0.35);
+  color: #9ef0be;
+}
+
+@media (max-width: 860px) {
+  .watchlist-manage-row .btn,
+  .watchlist-manage-row .input,
+  .watchlist-search-row .btn,
+  .watchlist-search-row .select {
+    width: 100%;
+  }
+}
+
+
+.watchlist-toolbar {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  gap: 12px;
+  align-items: center;
 }
 
-.cmp-actions .btn {
-  flex: 1 1 180px;
+.watchlist-toolbar .wl-search-input {
+  flex: 1 1 380px;
+  min-width: 260px;
 }
 
-.cmpRemove {
-  background: transparent;
-  border: 1px solid var(--border);
+.watchlist-toolbar .wl-add-input {
+  flex: 0 1 300px;
+  min-width: 220px;
+}
+
+.watchlist-toolbar .btn,
+.watchlist-toolbar .select {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .watchlist-toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 860px) {
+  .watchlist-toolbar .btn,
+  .watchlist-toolbar .select,
+  .watchlist-toolbar .wl-search-input,
+  .watchlist-toolbar .wl-add-input {
+    width: 100%;
+    min-width: 0;
+  }
 }

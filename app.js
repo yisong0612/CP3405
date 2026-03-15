@@ -63,6 +63,14 @@ const I18N = {
     opt_low: "Low",
     flow: "Flow:",
     wl_flow_note: "S2 → Add to Watchlist → Watchlist → View Details → S2",
+    wl_add_placeholder: "Add ticker to watchlist (e.g., AAPL, TSLA)",
+    btn_add_watchlist_quick: "Add",
+    btn_save_watchlist: "Save Watchlist",
+    wl_save_hint: "Added stocks can be saved here and kept after refresh.",
+    wl_saved_ok: "Watchlist saved.",
+    wl_add_success: "Added to watchlist:",
+    wl_add_exists: "Already in watchlist:",
+    wl_add_empty: "Please enter a ticker first.",
     btn_remove: "Remove",
 
     cmp_title: "Compare",
@@ -190,6 +198,14 @@ const I18N = {
     opt_low: "低",
     flow: "流程：",
     wl_flow_note: "S2 → 加入观察 → 观察名单 → 查看详情 → S2",
+    wl_add_placeholder: "添加到观察名单（例如：AAPL、TSLA）",
+    btn_add_watchlist_quick: "添加",
+    btn_save_watchlist: "保存观察名单",
+    wl_save_hint: "可在这里添加股票并保存，刷新后仍会保留。",
+    wl_saved_ok: "观察名单已保存。",
+    wl_add_success: "已加入观察名单：",
+    wl_add_exists: "已在观察名单中：",
+    wl_add_empty: "请先输入股票代码。",
     btn_remove: "移除",
 
     cmp_title: "比较",
@@ -384,6 +400,7 @@ const DEFAULT_UI_SETTINGS = {
 };
 const DEFAULT_WATCHLIST = [];
 const DEFAULT_COMPARE_LIST = [];
+const APP_PERSIST_KEY = "ai_stock_risk_state_v3";
 let uiSettings = { ...DEFAULT_UI_SETTINGS };
 
 const STOCKS = {
@@ -600,29 +617,101 @@ function applyTheme(theme) {
   localStorage.setItem("theme", theme);
 }
 
-function loadUISettings() {
+function readPersistedBundle() {
   try {
-    const raw = JSON.parse(localStorage.getItem("uiSettings") || "null");
-    if (raw && typeof raw === "object") {
-      return {
-        ...DEFAULT_UI_SETTINGS,
-        ...raw,
-        alertsOn: raw.alertsOn !== false,
-        highOn: raw.highOn !== false,
-        scoreTh: clamp(Number(raw.scoreTh ?? DEFAULT_UI_SETTINGS.scoreTh), 1, 100)
-      };
-    }
+    const raw = JSON.parse(localStorage.getItem(APP_PERSIST_KEY) || "null");
+    if (raw && typeof raw === "object") return raw;
   } catch (e) {
-    console.warn("Failed to load uiSettings:", e);
+    console.warn("Failed to read persisted bundle:", e);
   }
-  return { ...DEFAULT_UI_SETTINGS };
+  return null;
+}
+
+function normalizeSavedList(rawList, fallback = []) {
+  if (!Array.isArray(rawList)) return [...fallback];
+  return ensureUnique(
+    rawList
+      .map(v => String(v || "").trim().toUpperCase())
+      .filter(Boolean)
+  );
+}
+
+function buildPersistedBundle() {
+  return {
+    selectedTicker,
+    currentRange,
+    currentForecastDays,
+    watchlist: normalizeSavedList(watchlist, DEFAULT_WATCHLIST),
+    compareList: normalizeSavedList(compareList, DEFAULT_COMPARE_LIST),
+    uiSettings: {
+      ...DEFAULT_UI_SETTINGS,
+      ...uiSettings,
+      alertsOn: uiSettings.alertsOn !== false,
+      highOn: uiSettings.highOn !== false,
+      scoreTh: clamp(Number(uiSettings.scoreTh ?? DEFAULT_UI_SETTINGS.scoreTh), 1, 100)
+    }
+  };
+}
+
+function persistFullState() {
+  try {
+    localStorage.setItem(APP_PERSIST_KEY, JSON.stringify(buildPersistedBundle()));
+  } catch (e) {
+    console.warn("Failed to persist full state:", e);
+  }
+}
+
+function getPersistedBundleOrLegacy() {
+  const bundle = readPersistedBundle();
+  if (bundle) return bundle;
+
+  let legacyUi = null;
+  let legacyWatchlist = null;
+  let legacyCompare = null;
+  let legacyApp = null;
+
+  try { legacyUi = JSON.parse(localStorage.getItem("uiSettings") || "null"); } catch {}
+  try { legacyWatchlist = JSON.parse(localStorage.getItem("watchlist") || "null"); } catch {}
+  try { legacyCompare = JSON.parse(localStorage.getItem("compareList") || "null"); } catch {}
+  try { legacyApp = JSON.parse(localStorage.getItem("appState") || "null"); } catch {}
+
+  return {
+    selectedTicker: String(legacyApp?.selectedTicker || selectedTicker || "AAPL").trim().toUpperCase() || "AAPL",
+    currentRange: ["1M","3M","6M","1Y","3Y"].includes(legacyApp?.currentRange) ? legacyApp.currentRange : currentRange,
+    currentForecastDays: clamp(Number(legacyApp?.currentForecastDays || currentForecastDays || 7), 1, 60),
+    watchlist: normalizeSavedList(legacyWatchlist, DEFAULT_WATCHLIST),
+    compareList: normalizeSavedList(legacyCompare, DEFAULT_COMPARE_LIST),
+    uiSettings: {
+      ...DEFAULT_UI_SETTINGS,
+      ...(legacyUi && typeof legacyUi === "object" ? legacyUi : {}),
+      alertsOn: legacyUi?.alertsOn !== false,
+      highOn: legacyUi?.highOn !== false,
+      scoreTh: clamp(Number(legacyUi?.scoreTh ?? DEFAULT_UI_SETTINGS.scoreTh), 1, 100)
+    }
+  };
+}
+
+function loadUISettings() {
+  const bundle = getPersistedBundleOrLegacy();
+  return {
+    ...DEFAULT_UI_SETTINGS,
+    ...(bundle?.uiSettings || {}),
+    alertsOn: bundle?.uiSettings?.alertsOn !== false,
+    highOn: bundle?.uiSettings?.highOn !== false,
+    scoreTh: clamp(Number(bundle?.uiSettings?.scoreTh ?? DEFAULT_UI_SETTINGS.scoreTh), 1, 100)
+  };
 }
 
 function persistUISettings() {
   localStorage.setItem("uiSettings", JSON.stringify(uiSettings));
+  persistFullState();
 }
 
 function loadArrayStorage(key, fallback) {
+  const bundle = getPersistedBundleOrLegacy();
+  if (key === "watchlist") return normalizeSavedList(bundle?.watchlist, fallback);
+  if (key === "compareList") return normalizeSavedList(bundle?.compareList, fallback);
+
   try {
     const raw = JSON.parse(localStorage.getItem(key) || "null");
     if (Array.isArray(raw)) {
@@ -636,6 +725,7 @@ function loadArrayStorage(key, fallback) {
 
 function persistArrayStorage(key, list) {
   localStorage.setItem(key, JSON.stringify(ensureUnique((list || []).map(v => String(v || "").trim().toUpperCase()).filter(Boolean))));
+  persistFullState();
 }
 
 const LEGACY_DEFAULT_WATCHLIST = ["AAPL", "300750.SZ", "600519.SS", "TSLA", "NVDA"];
@@ -685,22 +775,11 @@ function ensureStockEntry(ticker) {
 }
 
 function loadAppState() {
-  try {
-    const raw = JSON.parse(localStorage.getItem("appState") || "null");
-    if (raw && typeof raw === "object") {
-      return {
-        selectedTicker: String(raw.selectedTicker || selectedTicker || "AAPL").trim().toUpperCase() || "AAPL",
-        currentRange: ["1M","3M","6M","1Y","3Y"].includes(raw.currentRange) ? raw.currentRange : currentRange,
-        currentForecastDays: clamp(Number(raw.currentForecastDays || currentForecastDays || 7), 1, 60)
-      };
-    }
-  } catch (e) {
-    console.warn("Failed to load appState:", e);
-  }
+  const bundle = getPersistedBundleOrLegacy();
   return {
-    selectedTicker: selectedTicker || "AAPL",
-    currentRange,
-    currentForecastDays
+    selectedTicker: String(bundle?.selectedTicker || selectedTicker || "AAPL").trim().toUpperCase() || "AAPL",
+    currentRange: ["1M","3M","6M","1Y","3Y"].includes(bundle?.currentRange) ? bundle.currentRange : currentRange,
+    currentForecastDays: clamp(Number(bundle?.currentForecastDays || currentForecastDays || 7), 1, 60)
   };
 }
 
@@ -710,6 +789,7 @@ function persistAppState() {
     currentRange,
     currentForecastDays
   }));
+  persistFullState();
 }
 
 function persistCollections() {
@@ -2278,6 +2358,7 @@ function applyPrediction(pred) {
   drawTrendChart("s2", pred.historySeries || [], pred.projectedSeries || [], pred.ticker);
 
   renderWatchlist();
+  setWatchlistStatus(t("wl_save_hint"));
   renderCompare();
   if (
     lastForecastResult &&
@@ -2300,6 +2381,44 @@ function switchView(viewName) {
   if (viewName === "watchlist") renderWatchlist();
   if (viewName === "compare") renderCompare();
   if (viewName === "reports") initReportsDropdown();
+}
+
+function setWatchlistStatus(message, kind = "") {
+  const box = document.getElementById("wlSaveStatus");
+  if (!box) return;
+  box.textContent = message || t("wl_save_hint");
+  box.classList.toggle("saved", kind === "saved");
+}
+
+function addTickerFromWatchlistInput() {
+  const input = document.getElementById("wlAddInput");
+  const raw = String(input?.value || "").trim().toUpperCase();
+  if (!raw) {
+    setWatchlistStatus(t("wl_add_empty"));
+    return;
+  }
+
+  ensureStockEntry(raw);
+  if (!watchlist.includes(raw)) {
+    watchlist.unshift(raw);
+    watchlist = ensureUnique(watchlist);
+    persistCollections();
+    persistFullState();
+    renderWatchlist();
+    setWatchlistStatus(`${t("wl_add_success")} ${raw}`, "saved");
+  } else {
+    setWatchlistStatus(`${t("wl_add_exists")} ${raw}`);
+  }
+
+  if (input) input.value = "";
+}
+
+function saveWatchlistNow() {
+  watchlist = ensureUnique((watchlist || []).map(v => String(v || "").trim().toUpperCase()).filter(Boolean));
+  persistCollections();
+  persistFullState();
+  renderWatchlist();
+  setWatchlistStatus(t("wl_saved_ok"), "saved");
 }
 
 function renderWatchlist() {
@@ -2370,6 +2489,7 @@ function renderWatchlist() {
       if (action === "remove") {
         watchlist = watchlist.filter(t => t !== ticker);
         persistCollections();
+  persistFullState();
         renderWatchlist();
       }
     });
@@ -2500,14 +2620,6 @@ function renderCompareTrend() {
   });
 }
 
-function removeCompareTicker(ticker) {
-  const cleanTicker = String(ticker || "").trim().toUpperCase();
-  if (!cleanTicker) return;
-  compareList = compareList.filter((item) => String(item || "").trim().toUpperCase() !== cleanTicker);
-  persistCollections();
-  renderCompare();
-}
-
 function renderCompare() {
   const box = document.getElementById("compareTable");
   if (!box) return;
@@ -2534,10 +2646,7 @@ function renderCompare() {
         <div><span class="muted">${currentLang === "zh" ? "评分" : "Score"}:</span> <b>${safeText(s.score, 0)}</b></div>
         <div><span class="muted">${currentLang === "zh" ? "置信度" : "Confidence"}:</span> <b>${safeText(s.conf, 0)}%</b></div>
         <div><span class="muted">7D:</span> <b class="num ${d7Class}">${fmt7d(s.d7)}</b></div>
-        <div class="cmp-actions">
-          <button class="btn primary cmpDetails" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "查看详情" : "View Details"}</button>
-          <button class="btn cmpRemove" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "删除" : "Remove"}</button>
-        </div>
+        <button class="btn primary cmpDetails" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "查看详情" : "View Details"}</button>
       </div>
     `;
   }).join("");
@@ -2548,12 +2657,6 @@ function renderCompare() {
       const pred = await predictRiskOnline(ticker, currentRange);
       applyPrediction(pred);
       switchView("detail");
-    });
-  });
-
-  box.querySelectorAll(".cmpRemove").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      removeCompareTicker(btn.dataset.ticker);
     });
   });
 
@@ -3123,6 +3226,7 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
     if (!watchlist.includes(cleanTicker)) watchlist.unshift(cleanTicker);
     watchlist = ensureUnique(watchlist);
     persistCollections();
+    persistFullState();
     renderWatchlist();
     switchView("watchlist");
   });
@@ -3144,6 +3248,11 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
 
   document.getElementById("wlSearch")?.addEventListener("input", renderWatchlist);
   document.getElementById("wlRiskSelect")?.addEventListener("change", renderWatchlist);
+  document.getElementById("wlAddBtn")?.addEventListener("click", addTickerFromWatchlistInput);
+  document.getElementById("wlAddInput")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addTickerFromWatchlistInput();
+  });
+  document.getElementById("wlSaveBtn")?.addEventListener("click", saveWatchlistNow);
   document.getElementById("wlFilterBtn")?.addEventListener("click", () => {
     const sel = document.getElementById("wlRiskSelect");
     if (!sel) return;
@@ -3314,7 +3423,7 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
   if (cmpRangeInit) cmpRangeInit.value = currentRange;
   const tickerLabelInit = document.getElementById("forecastTickerLabel");
   if (tickerLabelInit) tickerLabelInit.textContent = currentLang === "zh" ? `${selectedTicker} • ${currentForecastDays}天` : `${selectedTicker} • ${currentForecastDays}D`;
-  await setRange("1M");
+  await setRange(currentRange);
 
   const pred = await predictRiskOnline(selectedTicker, currentRange);
   applyPrediction(pred);
