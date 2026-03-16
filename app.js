@@ -55,7 +55,7 @@ const I18N = {
     s2_chart_title: "Risk Score Trend",
 
     wl_title: "Watchlist & Risk Monitoring",
-    wl_placeholder: "Search ticker/company",
+    wl_placeholder: "Search or add ticker/company",
     btn_filter_risk: "Filter by Risk",
     opt_all: "All",
     opt_high: "High",
@@ -70,7 +70,8 @@ const I18N = {
     wl_saved_ok: "Watchlist saved.",
     wl_add_success: "Added to watchlist:",
     wl_add_exists: "Already in watchlist:",
-    wl_add_empty: "Please enter a ticker first.",
+    wl_add_empty: "Please enter a ticker or company name first.",
+    wl_add_not_found: "No matching stock found:",
     btn_remove: "Remove",
 
     cmp_title: "Compare",
@@ -190,7 +191,7 @@ const I18N = {
     s2_chart_title: "风险评分趋势",
 
     wl_title: "观察列表 & 风险监控",
-    wl_placeholder: "搜索 股票代码/公司名",
+    wl_placeholder: "搜索或添加 股票代码/公司名",
     btn_filter_risk: "按风险筛选",
     opt_all: "全部",
     opt_high: "高",
@@ -205,7 +206,8 @@ const I18N = {
     wl_saved_ok: "观察名单已保存。",
     wl_add_success: "已加入观察名单：",
     wl_add_exists: "已在观察名单中：",
-    wl_add_empty: "请先输入股票代码。",
+    wl_add_empty: "请先输入股票代码或公司名。",
+    wl_add_not_found: "未找到匹配股票：",
     btn_remove: "移除",
 
     cmp_title: "比较",
@@ -2390,27 +2392,69 @@ function setWatchlistStatus(message, kind = "") {
   box.classList.toggle("saved", kind === "saved");
 }
 
+function resolveWatchlistTicker(query) {
+  const raw = String(query || "").trim();
+  if (!raw) return "";
+
+  const upper = raw.toUpperCase();
+  if (STOCKS[upper]) return upper;
+
+  const compact = upper.replace(/\s+/g, " ").trim();
+  const values = Object.values(STOCKS || {});
+
+  const exactTicker = values.find(s => String(s?.ticker || "").toUpperCase() === compact);
+  if (exactTicker) return exactTicker.ticker;
+
+  const exactName = values.find(s => String(s?.name || "").trim().toLowerCase() === raw.toLowerCase());
+  if (exactName) return exactName.ticker;
+
+  const startsWithName = values.find(s => String(s?.name || "").toLowerCase().startsWith(raw.toLowerCase()));
+  if (startsWithName) return startsWithName.ticker;
+
+  const containsName = values.find(s => String(s?.name || "").toLowerCase().includes(raw.toLowerCase()));
+  if (containsName) return containsName.ticker;
+
+  return compact;
+}
+
 function addTickerFromWatchlistInput() {
-  const input = document.getElementById("wlAddInput");
-  const raw = String(input?.value || "").trim().toUpperCase();
-  if (!raw) {
+  const input = document.getElementById("wlSearch");
+  const rawInput = String(input?.value || "").trim();
+  if (!rawInput) {
     setWatchlistStatus(t("wl_add_empty"));
     return;
   }
 
-  ensureStockEntry(raw);
-  if (!watchlist.includes(raw)) {
-    watchlist.unshift(raw);
+  const resolvedTicker = resolveWatchlistTicker(rawInput);
+  if (!resolvedTicker) {
+    setWatchlistStatus(`${t("wl_add_not_found")} ${rawInput}`);
+    return;
+  }
+
+  const stock = ensureStockEntry(resolvedTicker);
+  if (!stock) {
+    setWatchlistStatus(`${t("wl_add_not_found")} ${rawInput}`);
+    return;
+  }
+
+  if (!watchlist.includes(stock.ticker)) {
+    watchlist.unshift(stock.ticker);
     watchlist = ensureUnique(watchlist);
     persistCollections();
     persistFullState();
-    renderWatchlist();
-    setWatchlistStatus(`${t("wl_add_success")} ${raw}`, "saved");
-  } else {
-    setWatchlistStatus(`${t("wl_add_exists")} ${raw}`);
-  }
 
-  if (input) input.value = "";
+    const riskSelect = document.getElementById("wlRiskSelect");
+    if (riskSelect) riskSelect.value = "ALL";
+
+    if (input) input.value = "";
+    renderWatchlist();
+    setWatchlistStatus(`${t("wl_add_success")} ${stock.ticker} — ${stock.name}`, "saved");
+  } else {
+    const riskSelect = document.getElementById("wlRiskSelect");
+    if (riskSelect) riskSelect.value = "ALL";
+    renderWatchlist();
+    setWatchlistStatus(`${t("wl_add_exists")} ${stock.ticker} — ${stock.name}`);
+  }
 }
 
 function saveWatchlistNow() {
@@ -2646,7 +2690,10 @@ function renderCompare() {
         <div><span class="muted">${currentLang === "zh" ? "评分" : "Score"}:</span> <b>${safeText(s.score, 0)}</b></div>
         <div><span class="muted">${currentLang === "zh" ? "置信度" : "Confidence"}:</span> <b>${safeText(s.conf, 0)}%</b></div>
         <div><span class="muted">7D:</span> <b class="num ${d7Class}">${fmt7d(s.d7)}</b></div>
-        <button class="btn primary cmpDetails" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "查看详情" : "View Details"}</button>
+        <div class="compare-actions">
+          <button class="btn primary cmpDetails" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "查看详情" : "View Details"}</button>
+          <button class="btn cmpRemove" data-ticker="${escapeHtml(s.ticker)}">${currentLang === "zh" ? "删除" : "Remove"}</button>
+        </div>
       </div>
     `;
   }).join("");
@@ -2657,6 +2704,15 @@ function renderCompare() {
       const pred = await predictRiskOnline(ticker, currentRange);
       applyPrediction(pred);
       switchView("detail");
+    });
+  });
+
+  box.querySelectorAll(".cmpRemove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const ticker = String(btn.dataset.ticker || "").trim().toUpperCase();
+      compareList = compareList.filter((t) => String(t || "").trim().toUpperCase() !== ticker);
+      persistCollections();
+      renderCompare();
     });
   });
 
@@ -3247,11 +3303,14 @@ document.getElementById("forecastExportBtn")?.addEventListener("click", () => {
   }
 
   document.getElementById("wlSearch")?.addEventListener("input", renderWatchlist);
+  document.getElementById("wlSearch")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addTickerFromWatchlistInput();
+    }
+  });
   document.getElementById("wlRiskSelect")?.addEventListener("change", renderWatchlist);
   document.getElementById("wlAddBtn")?.addEventListener("click", addTickerFromWatchlistInput);
-  document.getElementById("wlAddInput")?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") addTickerFromWatchlistInput();
-  });
   document.getElementById("wlSaveBtn")?.addEventListener("click", saveWatchlistNow);
   document.getElementById("wlFilterBtn")?.addEventListener("click", () => {
     const sel = document.getElementById("wlRiskSelect");

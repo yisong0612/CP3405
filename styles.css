@@ -1395,3 +1395,15 @@ body.light-theme option {
     min-width: 0;
   }
 }
+
+
+.compare-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.compare-actions .btn {
+  flex: 1 1 160px;
+}
