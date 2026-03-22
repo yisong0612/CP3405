@@ -36,8 +36,8 @@
     .input-card,.hero-card,.chart-card,.side-card,.table-card,.news-card,.watch-card,.widget-card{padding:18px}
     .input-head,.hero-head,.section-head,.chart-head,.widget-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
     .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}
-    .title{margin:2px 0 0;font-size:24px;line-height:1.1}.desc{margin:6px 0 0;color:var(--muted);line-height:1.6}
-    .inline-note{font-size:12px;color:var(--muted);line-height:1.6}
+    .title{margin:2px 0 0;font-size:24px;line-height:1.1}.desc{display:none}
+    .inline-note{display:none}
     .input-grid{display:grid;grid-template-columns:1.05fr .86fr .86fr .62fr auto auto;gap:12px;align-items:end}
     label{display:block;margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:800}
     input,select{width:100%;padding:13px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card2);color:var(--text);outline:none}
@@ -67,8 +67,8 @@
     .news-list{display:grid;gap:12px}.news-item{display:block;text-decoration:none;color:inherit;padding:14px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--accent) 4%, var(--card2))}.news-item strong{display:block;line-height:1.45;margin-bottom:6px}.news-meta{font-size:12px;color:var(--muted)}
     .watch-layout{display:grid;grid-template-columns:330px 1fr;gap:16px}.watch-list{display:grid;gap:10px}.watch-item{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card2);cursor:pointer}.watch-item button{margin-left:auto;border:none;background:transparent;color:var(--danger);font-size:18px;cursor:pointer}
     .empty{padding:22px 14px;border-radius:16px;border:1px dashed var(--line);text-align:center;color:var(--muted);background:color-mix(in srgb,var(--accent) 3%, var(--card2))}
-    .small{font-size:12px;color:var(--muted);line-height:1.6}
-    .ver{font-size:11px;color:var(--muted);margin-top:8px}
+    .small{display:none}
+    .ver{display:none}
     .widget-panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border-color:var(--panelLine);color:var(--panelText);box-shadow:0 12px 30px rgba(42,73,124,.06)}
     .widget-panel .eyebrow,.widget-panel .small,.widget-panel .desc,.widget-panel .news-meta,.widget-panel .widget-muted{color:var(--panelMuted)}
     .widget-input{background:rgba(255,255,255,.04);border-color:var(--panelLine);color:var(--panelText)}
@@ -123,9 +123,9 @@
           <div>
             <div class="eyebrow" data-t="eyebrowInput">Quick Input</div>
             <h2 class="title" data-t="titleInput">Load real stock data</h2>
-            <p class="desc" data-t="descInput">A cleaner homepage: one input row, big chart, and only the essentials.</p>
+            
           </div>
-          <div class="inline-note" data-t="miniHint">v5 · controls moved next to the logo and the detail page gets finance-style widgets.</div>
+          
         </div>
         <div class="input-grid">
           <div>
@@ -177,7 +177,7 @@
             <div>
               <div class="eyebrow" data-t="eyebrowChart">Large Chart</div>
               <h3 data-t="chartTitle">Historical Trend</h3>
-              <p data-t="chartDesc">Closing price with 5-day moving average.</p>
+              
             </div>
           </div>
           <div class="chart-box"><svg id="chartSvg" viewBox="0 0 900 540" preserveAspectRatio="none"></svg></div>
@@ -187,7 +187,7 @@
             <div>
               <div class="eyebrow" data-t="eyebrowCore">Core Insight</div>
               <h3 data-t="coreTitle">Key Factors</h3>
-              <p data-t="coreDesc">Only the shortest explanation stays here.</p>
+              
             </div>
           </div>
           <ul class="factor-list" id="factorsList"><li data-t="waiting">Waiting for analysis</li></ul>
@@ -204,7 +204,7 @@
               <div>
                 <div class="eyebrow" data-t="eyebrowDetail">Finance Detail</div>
                 <h3 data-t="detailTitle">Professional Data View</h3>
-                <p data-t="detailDesc">Use a more finance-style layout here, while keeping the homepage clean.</p>
+                
               </div>
             </div>
             <table><tbody id="summaryTable"></tbody></table>
@@ -213,7 +213,7 @@
             <div class="section-head">
               <div>
                 <h4 data-t="sampleTitle">Recent Sample Data</h4>
-                <p data-t="sampleDesc">Recent observations from the downloaded history.</p>
+                
               </div>
             </div>
             <table>
@@ -225,7 +225,7 @@
             <div class="section-head">
               <div>
                 <h4 data-t="analysisTitle">Analysis</h4>
-                <p data-t="analysisDesc">Longer explanation stays on this page.</p>
+                
               </div>
             </div>
             <p id="analysisText">-</p>
@@ -270,7 +270,7 @@
               <button class="btn secondary" id="refreshMarketBtn" data-t="refreshMarket">Refresh</button>
             </div>
             <div class="widget-list" id="trendingList"></div>
-            <div class="widget-status" id="marketStatus"></div>
+            
           </section>
 
           <section class="widget-card card widget-panel">
@@ -302,7 +302,7 @@
             <div>
               <div class="eyebrow" data-t="eyebrowWatch">Local Watchlist</div>
               <h3 data-t="watchTitle">Saved Tickers</h3>
-              <p data-t="watchDesc">Saved locally in your browser.</p>
+              
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 100px;gap:10px;align-items:center;margin-bottom:12px">
@@ -310,7 +310,7 @@
             <button class="btn secondary" id="addWatchBtn" data-t="addBtn">Add</button>
           </div>
           <div class="watch-list" id="watchList"></div>
-          <div class="ver" data-t="watchHint">Tip: click a saved ticker to load it and jump back to the minimal overview.</div>
+          
         </aside>
         <div class="stack">
           <section class="news-card card">
@@ -321,7 +321,7 @@
                               </div>
               <button class="btn secondary" id="refreshNewsBtn" data-t="refreshNews">Refresh News</button>
             </div>
-            <div class="status-inline" id="newsStatus"></div>
+            
             <div class="news-list" id="newsList"><div class="empty" data-t="newsEmpty">Load a ticker to see related news.</div></div>
           </section>
           <section class="table-card card">
@@ -329,10 +329,10 @@
               <div>
                 <div class="eyebrow" data-t="eyebrowSaved">Saved Packs</div>
                 <h3 data-t="savedTitle">Saved Analysis Packs</h3>
-                <p data-t="savedDesc">Save prediction results, related news, and model parameters locally in your browser.</p>
+                
               </div>
             </div>
-            <div class="small" data-t="savedHint">Each saved pack contains the latest prediction text, news list, summary data, and the model parameters used for the estimate.</div>
+            
             <div class="watch-list" id="savedPackList" style="margin-top:12px"></div>
           </section>
         </div>
@@ -343,13 +343,13 @@
   <script>
     const TEXT = {
       en:{
-        eyebrowInput:'Quick Input', titleInput:'Load real stock data', descInput:'A cleaner homepage: one input row, big chart, and only the essentials.', miniHint:'v9 · refresh news now rotates through a larger latest-news pool and removes the extra helper sentence.',
+        eyebrowInput:'Quick Input', titleInput:'Load real stock data', descInput:'', miniHint:'',
         tickerLabel:'Ticker', startLabel:'Start Date', endLabel:'End Date', daysLabel:'Forecast Days', analyzeBtn:'Load Analysis', savePackBtn:'Save Pack', exportBtn:'Export JSON', loading:'Loading real historical data...',
-        eyebrowOverview:'Minimal Overview', eyebrowChart:'Large Chart', chartTitle:'Historical Trend', chartDesc:'Closing price with 5-day moving average.', eyebrowCore:'Core Insight', coreTitle:'Key Factors', coreDesc:'Only the shortest explanation stays here.', waiting:'Waiting for analysis',
-        eyebrowDetail:'Finance Detail', detailTitle:'Professional Data View', detailDesc:'Use a more finance-style layout here, while keeping the homepage clean.',
-        sampleTitle:'Recent Sample Data', sampleDesc:'Recent observations from the downloaded history.', dateCol:'Date', closeCol:'Close', analysisTitle:'Analysis', analysisDesc:'Longer explanation stays on this page.', forecastTitle:'Forecast View',
-        eyebrowWatch:'Local Watchlist', watchTitle:'Saved Tickers', watchDesc:'Saved locally in your browser.', addBtn:'Add', watchHint:'Tip: click a saved ticker to load it and jump back to the minimal overview.',
-        eyebrowNews:'News', newsTitle:'Related News', newsDesc:'News is placed on its own page so the main view stays clean.', refreshNews:'Refresh News', newsRefreshing:'Refreshing...', newsRefreshed:'News refreshed.', newsNeedTicker:'Load a ticker first.', newsUpdated:'Updated at', newsFailed:'Refresh failed:', marketRefreshing:'Refreshing market panel...', marketUpdated:'Market panel updated at', marketFailed:'Market panel refresh failed:', newsEmpty:'Load a ticker to see related news.', eyebrowSaved:'Saved Packs', savedTitle:'Saved Analysis Packs', savedDesc:'Save prediction results, related news, and model parameters locally in your browser.', savedHint:'Each saved pack contains the latest prediction text, news list, summary data, and the model parameters used for the estimate.', saveDone:'Saved locally.', noSaved:'No saved analysis packs yet.', loadSaved:'Load', exportSaved:'Export', deleteSaved:'Delete',
+        eyebrowOverview:'Minimal Overview', eyebrowChart:'Large Chart', chartTitle:'Historical Trend', chartDesc:'', eyebrowCore:'Core Insight', coreTitle:'Key Factors', coreDesc:'', waiting:'Waiting for analysis',
+        eyebrowDetail:'Finance Detail', detailTitle:'Professional Data View', detailDesc:'',
+        sampleTitle:'Recent Sample Data', sampleDesc:'', dateCol:'Date', closeCol:'Close', analysisTitle:'Analysis', analysisDesc:'', forecastTitle:'Forecast View',
+        eyebrowWatch:'Local Watchlist', watchTitle:'Saved Tickers', watchDesc:'', addBtn:'Add', watchHint:'',
+        eyebrowNews:'News', newsTitle:'Related News', newsDesc:'', refreshNews:'Refresh News', newsRefreshing:'Refreshing...', newsRefreshed:'News refreshed.', newsNeedTicker:'Load a ticker first.', newsUpdated:'Updated at', newsFailed:'Refresh failed:', marketRefreshing:'Refreshing market panel...', marketUpdated:'Market panel updated at', marketFailed:'Market panel refresh failed:', newsEmpty:'Load a ticker to see related news.', eyebrowSaved:'Saved Packs', savedTitle:'Saved Analysis Packs', savedDesc:'', savedHint:'', saveDone:'Saved locally.', noSaved:'No saved analysis packs yet.', loadSaved:'Load', exportSaved:'Export', deleteSaved:'Delete',
         tabMinimal:'Minimal Overview', tabDetail:'Finance Detail', tabNews:'News & Watchlist',
         source:'Source', confidence:'Confidence', lastTrade:'Last Trading Day', generated:'Generated', noData:'No data yet', exported:'JSON exported.', exists:'Already saved.', resultMissing:'No result to save yet.', savedExported:'Saved pack exported.',
         themeLight:'🌙 Dark', themeDark:'☀️ Light', watchPlaceholder:'Add ticker e.g. TSLA',
@@ -358,13 +358,13 @@
         details:{'Start Price':'Start Price','End Price':'End Price','Average Price':'Average Price','Highest Price':'Highest Price','Lowest Price':'Lowest Price','Price Change (%)':'Price Change (%)','Total Data Days':'Total Data Days','Last Trading Day':'Last Trading Day'}
       },
       zh:{
-        eyebrowInput:'快速输入', titleInput:'加载真实股票数据', descInput:'首页只保留一行输入、更大的图表和最核心的信息。', miniHint:'v9 · 刷新新闻会从更大的最新新闻池中轮换显示，同时删除多余说明文字。',
+        eyebrowInput:'快速输入', titleInput:'加载真实股票数据', descInput:'', miniHint:'',
         tickerLabel:'股票代码', startLabel:'开始日期', endLabel:'结束日期', daysLabel:'预测天数', analyzeBtn:'加载分析', savePackBtn:'保存结果包', exportBtn:'导出 JSON', loading:'正在加载真实历史数据...',
-        eyebrowOverview:'极简总览', eyebrowChart:'大图表', chartTitle:'历史走势', chartDesc:'收盘价 + 5日均线。', eyebrowCore:'核心摘要', coreTitle:'关键因素', coreDesc:'这里只保留最短的说明。', waiting:'等待分析',
-        eyebrowDetail:'专业数据', detailTitle:'专业金融详情页', detailDesc:'这里采用更像金融网站的布局，同时首页保持干净。',
-        sampleTitle:'近期样本数据', sampleDesc:'来自已下载历史价格的近期观测。', dateCol:'日期', closeCol:'收盘价', analysisTitle:'分析', analysisDesc:'较长解释放在这个页面。', forecastTitle:'预测观点',
-        eyebrowWatch:'本地观察名单', watchTitle:'已保存股票', watchDesc:'保存在浏览器本地。', addBtn:'添加', watchHint:'提示：点击已保存股票即可加载，并跳回极简总览。',
-        eyebrowNews:'新闻', newsTitle:'相关新闻', newsDesc:'新闻单独放一页，这样主页会更干净。', refreshNews:'刷新新闻', newsRefreshing:'刷新中...', newsRefreshed:'新闻已刷新。', newsNeedTicker:'请先加载股票。', newsUpdated:'更新时间', newsFailed:'刷新失败：', marketRefreshing:'正在刷新市场面板...', marketUpdated:'市场面板已更新：', marketFailed:'市场面板刷新失败：', newsEmpty:'加载股票后即可查看相关新闻。', eyebrowSaved:'已保存结果', savedTitle:'已保存分析结果包', savedDesc:'把预测结果、相关新闻和模型参数一起保存在浏览器本地。', savedHint:'每个结果包都会保存最新预测文字、新闻列表、摘要数据，以及本次估计使用的模型参数。', saveDone:'已保存到本地。', noSaved:'还没有保存任何结果包。', loadSaved:'加载', exportSaved:'导出', deleteSaved:'删除',
+        eyebrowOverview:'极简总览', eyebrowChart:'大图表', chartTitle:'历史走势', chartDesc:'', eyebrowCore:'核心摘要', coreTitle:'关键因素', coreDesc:'', waiting:'等待分析',
+        eyebrowDetail:'专业数据', detailTitle:'专业金融详情页', detailDesc:'',
+        sampleTitle:'近期样本数据', sampleDesc:'', dateCol:'日期', closeCol:'收盘价', analysisTitle:'分析', analysisDesc:'', forecastTitle:'预测观点',
+        eyebrowWatch:'本地观察名单', watchTitle:'已保存股票', watchDesc:'', addBtn:'添加', watchHint:'',
+        eyebrowNews:'新闻', newsTitle:'相关新闻', newsDesc:'', refreshNews:'刷新新闻', newsRefreshing:'刷新中...', newsRefreshed:'新闻已刷新。', newsNeedTicker:'请先加载股票。', newsUpdated:'更新时间', newsFailed:'刷新失败：', marketRefreshing:'正在刷新市场面板...', marketUpdated:'市场面板已更新：', marketFailed:'市场面板刷新失败：', newsEmpty:'加载股票后即可查看相关新闻。', eyebrowSaved:'已保存结果', savedTitle:'已保存分析结果包', savedDesc:'', savedHint:'', saveDone:'已保存到本地。', noSaved:'还没有保存任何结果包。', loadSaved:'加载', exportSaved:'导出', deleteSaved:'删除',
         tabMinimal:'极简总览', tabDetail:'专业详细版', tabNews:'新闻与观察名单',
         source:'来源', confidence:'信心', lastTrade:'最后交易日', generated:'生成时间', noData:'暂无数据', exported:'JSON 已导出。', exists:'已存在于观察名单。', resultMissing:'还没有可保存的结果。', savedExported:'已导出保存包。',
         themeLight:'🌙 深色', themeDark:'☀️ 浅色', watchPlaceholder:'添加股票代码，例如 TSLA',
@@ -401,8 +401,8 @@
     function renderSummaryTable(sum={}){const rows=Object.entries(sum).map(([k,v])=>`<tr><th>${TEXT[state.lang].details[k]||k}</th><td>${fmt(v)}</td></tr>`).join('');el('summaryTable').innerHTML=rows||`<tr><td colspan="2">${txt('noData')}</td></tr>`;}
     function renderSample(sample=[]){el('sampleTable').innerHTML=sample.length?sample.map(r=>`<tr><td>${r.date}</td><td>${fmt(r.close)}</td></tr>`).join(''):`<tr><td colspan="2">${txt('noData')}</td></tr>`;}
     function nowTime(){return new Date().toLocaleTimeString(state.lang==='zh' ? 'zh-CN' : 'en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
-    function setNewsStatus(msg,type=''){const n=el('newsStatus'); if(!n) return; n.textContent=msg||''; n.className='status-inline'+(type?` ${type}`:'');}
-    function setMarketStatus(msg,type=''){const n=el('marketStatus'); if(!n) return; n.textContent=msg||''; n.className='widget-status'+(type?` ${type}`:'');}
+    function setNewsStatus(msg,type=''){return;}
+    function setMarketStatus(msg,type=''){return;}
     function renderNews(items=[]){el('newsList').innerHTML=items.length?items.map(n=>`<a class="news-item" href="${n.link}" target="_blank" rel="noopener noreferrer"><strong>${n.title}</strong><div class="news-meta">${[n.source,n.published].filter(Boolean).join(' · ')}</div></a>`).join(''):`<div class="empty">${txt('newsEmpty')}</div>`;}
     function sparkSvg(points=[], positive=true){let vals=(Array.isArray(points)?points:[]).map(Number).filter(v=>Number.isFinite(v));if(vals.length<2){vals=[15,16,14,18,17,19,18,20,21,19,22];}const w=72,h=18,max=Math.max(...vals),min=Math.min(...vals);const x=i=>i*(w/Math.max(1,vals.length-1));const y=v=>2+(max-v)*((h-4)/(max-min||1));const d=vals.map((v,i)=>`${i?'L':'M'} ${x(i)} ${y(v)}`).join(' ');const color=positive?'#34d399':'#fb7185';return `<svg class="spark" viewBox="0 0 72 18"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/></svg>`;}
     function renderSnapshot(){if(!state.latest){el('snapshotName').textContent='-';el('snapshotMeta').textContent='-';return;}const sum=state.latest.historical_data_summary||{};const ch=Number(sum['Price Change (%)']||0);el('snapshotName').textContent=`${state.latest.stock_name} (${state.latest.ticker})`;el('snapshotMeta').textContent=`${fmt(sum['End Price'])} · ${ch>=0?'+':''}${fmt(ch)}% · ${state.latest.last_trading_day||'-'}`;}

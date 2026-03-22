@@ -465,43 +465,38 @@ def quote_snapshot(ticker: str) -> Dict[str, Any]:
     if len(points) < 2:
         raise RuntimeError("No recent quote data.")
 
-    recent = points[-12:]
     closes = [float(p["close"]) for p in points if p.get("close") is not None]
     if len(closes) < 2:
         raise RuntimeError("No recent quote data.")
 
-    regular_market_price = meta.get("regularMarketPrice")
-    previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
-    try:
-        price = float(regular_market_price) if regular_market_price is not None else float(closes[-1])
-    except Exception:
-        price = float(closes[-1])
-    try:
-        prev = float(previous_close) if previous_close is not None else float(closes[-2])
-    except Exception:
-        prev = float(closes[-2])
-
-    # Fall back to the last two distinct closes when Yahoo does not expose a usable previous close.
-    if not prev:
-        prev = float(closes[-2])
-    if round(price, 4) == round(prev, 4):
-        distinct = []
-        for value in reversed(closes):
-            if not distinct or round(value, 4) != round(distinct[-1], 4):
-                distinct.append(value)
-            if len(distinct) >= 2:
-                break
+    # Use the last two distinct trading-day closes so the displayed 1D change
+    # matches the real close-to-close move from Yahoo Finance history.
+    distinct = []
+    for point in reversed(points):
+        value = float(point["close"])
+        if not distinct or round(value, 4) != round(distinct[-1]["close"], 4):
+            distinct.append({"close": value, "date": point["date"]})
         if len(distinct) >= 2:
-            price, prev = distinct[0], distinct[1]
+            break
+    if len(distinct) < 2:
+        raise RuntimeError("No recent quote data.")
 
+    latest = distinct[0]
+    previous = distinct[1]
+    price = latest["close"]
+    prev = previous["close"]
     change_pct = ((price - prev) / prev) * 100 if prev else 0.0
+
+    recent = points[-12:]
+    spark = [round(float(p["close"]), 2) for p in recent if p.get("close") is not None]
+
     return {
         "symbol": (meta.get("symbol") or ticker).upper(),
         "name": meta.get("shortName") or meta.get("longName") or ticker.upper(),
         "price": round(price, 2),
         "change_pct": round(change_pct, 2),
-        "spark": [round(float(p["close"]), 2) for p in recent],
-        "last_date": recent[-1]["date"],
+        "spark": spark,
+        "last_date": latest["date"],
         "previous_close": round(prev, 2),
         "change_basis": "1D",
     }
@@ -638,32 +633,20 @@ class AppHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    import os
     import socket
-
-    render_port = os.environ.get("PORT")
-    is_render = render_port is not None
-
-    if is_render:
-        host = "0.0.0.0"
-        port = int(render_port)
-    else:
-        host = "127.0.0.1"
-        port = PREFERRED_PORT
-        for candidate in range(PREFERRED_PORT, PREFERRED_PORT + 20):
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                if s.connect_ex(("127.0.0.1", candidate)) != 0:
-                    port = candidate
-                    break
-
-    server = ThreadingHTTPServer((host, port), AppHandler)
-
-    if not is_render:
-        threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{port}/?v=9")).start()
-        print(f"Server running at http://127.0.0.1:{port}")
-        print("Keep this terminal open while the web app is running.")
-    else:
-        print(f"Server running on Render at 0.0.0.0:{port}")
-
+    port = PREFERRED_PORT
+    for candidate in range(PREFERRED_PORT, PREFERRED_PORT + 20):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if s.connect_ex(("127.0.0.1", candidate)) != 0:
+                port = candidate
+                break
+    server = ThreadingHTTPServer(("127.0.0.1", port), AppHandler)
+    threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{port}/?v=9")).start()
+    print(f"Server running at http://127.0.0.1:{port}")
+    print("Keep this terminal open while the web app is running.")
     server.serve_forever()
+
+
+if __name__ == "__main__":
+    main()
