@@ -638,20 +638,32 @@ class AppHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    import os
     import socket
-    port = PREFERRED_PORT
-    for candidate in range(PREFERRED_PORT, PREFERRED_PORT + 20):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            if s.connect_ex(("127.0.0.1", candidate)) != 0:
-                port = candidate
-                break
-    server = ThreadingHTTPServer(("127.0.0.1", port), AppHandler)
-    threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{port}/?v=9")).start()
-    print(f"Server running at http://127.0.0.1:{port}")
-    print("Keep this terminal open while the web app is running.")
+
+    render_port = os.environ.get("PORT")
+    is_render = render_port is not None
+
+    if is_render:
+        host = "0.0.0.0"
+        port = int(render_port)
+    else:
+        host = "127.0.0.1"
+        port = PREFERRED_PORT
+        for candidate in range(PREFERRED_PORT, PREFERRED_PORT + 20):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                if s.connect_ex(("127.0.0.1", candidate)) != 0:
+                    port = candidate
+                    break
+
+    server = ThreadingHTTPServer((host, port), AppHandler)
+
+    if not is_render:
+        threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{port}/?v=9")).start()
+        print(f"Server running at http://127.0.0.1:{port}")
+        print("Keep this terminal open while the web app is running.")
+    else:
+        print(f"Server running on Render at 0.0.0.0:{port}")
+
     server.serve_forever()
-
-
-if __name__ == "__main__":
-    main()
