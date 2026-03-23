@@ -21,4 +21,3 @@ if %errorlevel%==0 (
 echo Python 3 was not found on this computer.
 pause
 :end
-

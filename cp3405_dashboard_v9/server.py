@@ -51,6 +51,7 @@ TRANSLATIONS = {
         "low": "Low",
         "analysis_sentence": "The 5-day trend is {short}, the 20-day trend is {long}, and daily volatility is about {vol}%.",
         "forecast_sentence": "For the next {days} days, the model points to a {direction} bias based on moving-average slope, overall range change, and recent volatility. This is an estimate, not real future data.",
+        "forecast_result_sentence": "Estimated {days}-day change: {change}%. Projected end price: {price}. Estimated range: {low} to {high}.",
         "factor_5ma": "5-day moving average",
         "factor_20ma": "20-day moving average",
         "factor_change": "Historical price change",
@@ -85,6 +86,7 @@ TRANSLATIONS = {
         "low": "低",
         "analysis_sentence": "5日趋势为{short}，20日趋势为{long}，日波动率约为 {vol}%。",
         "forecast_sentence": "未来 {days} 天，模型根据均线斜率、区间涨跌幅和近期波动率，判断走势偏{direction}。这只是估计，不是真实未来价格。",
+        "forecast_result_sentence": "预计未来 {days} 天涨跌幅：{change}%。预计结束价格约为 {price}。估计区间：{low} 到 {high}。",
         "factor_5ma": "5日移动平均线",
         "factor_20ma": "20日移动平均线",
         "factor_change": "历史价格变动",
@@ -256,21 +258,40 @@ def _download_real_history(config: AnalysisConfig) -> Dict[str, Any]:
 def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary: Dict[str, Any], lang: str) -> Dict[str, Any]:
     lang = get_lang(lang)
     prices = [float(p["close"]) for p in points if p.get("close") is not None]
+    last_price = float(prices[-1]) if prices else 0.0
+
+    def next_trading_days(start_date: str, days: int) -> List[str]:
+        d = dt.datetime.strptime(start_date, "%Y-%m-%d").date()
+        result = []
+        while len(result) < days:
+            d += dt.timedelta(days=1)
+            if d.weekday() < 5:
+                result.append(d.isoformat())
+        return result
+
     if len(prices) < 10:
+        future_days = next_trading_days(points[-1]["date"], forecast_days) if points else []
+        forecast_points = [{"date": day, "close": round(last_price, 2)} for day in future_days]
         return {
             "analysis": t(lang, "sample_short_analysis"),
             "forecast": t(lang, "sample_short_forecast", days=forecast_days),
             "confidence": t(lang, "low"),
             "key_factors": [t(lang, "small_sample"), t(lang, "short_vol"), t(lang, "limited_confirmation")],
+            "predicted_change_pct": 0.0,
+            "predicted_end_price": round(last_price, 2),
+            "predicted_range_low": round(last_price, 2),
+            "predicted_range_high": round(last_price, 2),
+            "forecast_points": forecast_points,
+            "forecast_summary": t(lang, "forecast_result_sentence", days=forecast_days, change="0.00", price=f"{last_price:.2f}", low=f"{last_price:.2f}", high=f"{last_price:.2f}"),
         }
 
     returns = []
     for prev, curr in zip(prices[:-1], prices[1:]):
         if prev:
             returns.append((curr - prev) / prev)
+    mean_r = sum(returns) / len(returns) if returns else 0.0
     vol = 0.0
     if returns:
-        mean_r = sum(returns) / len(returns)
         vol = (sum((r - mean_r) ** 2 for r in returns) / len(returns)) ** 0.5
 
     def moving_average(values: List[float], window: int) -> List[float]:
@@ -289,8 +310,10 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
         denominator = sum((xi - x_mean) ** 2 for xi in x) or 1.0
         return numerator / denominator
 
-    short_slope = slope_last(moving_average(prices, 5))
-    long_slope = slope_last(moving_average(prices, 20))
+    short_ma = moving_average(prices, 5)
+    long_ma = moving_average(prices, 20)
+    short_slope = slope_last(short_ma)
+    long_slope = slope_last(long_ma)
     pct = float(summary.get("Price Change (%)", 0.0))
     score = 0.0
     score += 1.0 if short_slope > 0 else -1.0 if short_slope < 0 else 0.0
@@ -313,7 +336,40 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
         long=t(lang, "upward") if long_slope > 0 else t(lang, "downward") if long_slope < 0 else t(lang, "flat"),
         vol=round(vol * 100, 2),
     )
+
+    last_10_mean = sum(returns[-10:]) / min(len(returns), 10) if returns else 0.0
+    short_ret = short_slope / last_price if last_price else 0.0
+    long_ret = long_slope / last_price if last_price else 0.0
+    expected_daily = (0.5 * short_ret) + (0.25 * long_ret) + (0.25 * last_10_mean)
+    clamp = max(0.005, min(0.04, (vol * 2.2) if vol else 0.02))
+    if expected_daily > clamp:
+        expected_daily = clamp
+    elif expected_daily < -clamp:
+        expected_daily = -clamp
+
+    predicted_change = ((1 + expected_daily) ** forecast_days - 1) * 100
+    predicted_end_price = last_price * ((1 + expected_daily) ** forecast_days)
+    band_pct = vol * (forecast_days ** 0.5) * 100
+    range_low = predicted_end_price * (1 - band_pct / 100)
+    range_high = predicted_end_price * (1 + band_pct / 100)
+
+    future_days = next_trading_days(points[-1]["date"], forecast_days) if points else []
+    forecast_points = []
+    running_price = last_price
+    for day in future_days:
+        running_price = running_price * (1 + expected_daily)
+        forecast_points.append({"date": day, "close": round(running_price, 2)})
+
     forecast = t(lang, "forecast_sentence", days=forecast_days, direction=direction)
+    forecast_summary = t(
+        lang,
+        "forecast_result_sentence",
+        days=forecast_days,
+        change=f"{predicted_change:+.2f}",
+        price=f"{predicted_end_price:.2f}",
+        low=f"{range_low:.2f}",
+        high=f"{range_high:.2f}",
+    )
     return {
         "analysis": analysis,
         "forecast": forecast,
@@ -321,6 +377,12 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
         "key_factors": [
             t(lang, "factor_5ma"), t(lang, "factor_20ma"), t(lang, "factor_change"), t(lang, "factor_vol"), t(lang, "factor_events")
         ],
+        "predicted_change_pct": round(predicted_change, 2),
+        "predicted_end_price": round(predicted_end_price, 2),
+        "predicted_range_low": round(range_low, 2),
+        "predicted_range_high": round(range_high, 2),
+        "forecast_points": forecast_points,
+        "forecast_summary": forecast_summary,
     }
 
 
@@ -538,6 +600,14 @@ def analyse_stock(config: AnalysisConfig) -> Dict[str, Any]:
         "confidence": forecast["confidence"],
         "key_factors": forecast["key_factors"],
         "note": f"{data['data_note']} {t(lang, 'forecast_note')}",
+        "forecast_summary": forecast["forecast_summary"],
+        "forecast_metrics": {
+            "predicted_change_pct": forecast["predicted_change_pct"],
+            "predicted_end_price": forecast["predicted_end_price"],
+            "predicted_range_low": forecast["predicted_range_low"],
+            "predicted_range_high": forecast["predicted_range_high"],
+        },
+        "forecast_points": forecast["forecast_points"],
         "last_trading_day": data["last_trading_day"],
         "last_trading_day_label": t(lang, "last_trading_day"),
         "news": news_items,
@@ -655,10 +725,7 @@ def main() -> None:
     server = ThreadingHTTPServer((host, port), AppHandler)
 
     if not is_render:
-        threading.Timer(
-            1.0,
-            lambda: webbrowser.open(f"http://127.0.0.1:{port}/?v=9")
-        ).start()
+        threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{port}/?v=11")).start()
         print(f"Server running at http://127.0.0.1:{port}")
         print("Keep this terminal open while the web app is running.")
     else:
@@ -669,4 +736,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
