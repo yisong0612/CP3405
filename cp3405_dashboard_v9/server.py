@@ -1016,11 +1016,10 @@ def main() -> None:
         print(f"Server running at http://127.0.0.1:{port}")
         print("Keep this terminal open while the web app is running.")
     else:
-     print(f"Server running on Render at 0.0.0.0:{port}")
-
-print("DEBUG entering serve_forever()")
-server.serve_forever()
-
+        print(f"Server running on Render at 0.0.0.0:{port}")
+ 
+    print("DEBUG entering serve_forever()")
+    server.serve_forever()
 
 if __name__ == "__main__":
     main()
