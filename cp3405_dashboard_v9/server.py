@@ -23,12 +23,66 @@ YAHOO_ENDPOINTS = [
     "https://query2.finance.yahoo.com/v8/finance/chart/{ticker}",
 ]
 GOOGLE_NEWS_RSS = "https://news.google.com/rss/search"
+YAHOO_SEARCH_ENDPOINT = "https://query2.finance.yahoo.com/v1/finance/search"
+
+SUGGESTION_UNIVERSE = [
+    {"symbol": "A", "name": "Agilent Technologies, Inc."}, {"symbol": "AA", "name": "Alcoa Corporation"},
+    {"symbol": "AAA", "name": "Alternative Access First Priority CLO Bond ETF"}, {"symbol": "AACG", "name": "ATA Creativity Global"},
+    {"symbol": "AAL", "name": "American Airlines Group Inc."}, {"symbol": "AAME", "name": "Atlantic American Corporation"},
+    {"symbol": "AAP", "name": "Advance Auto Parts, Inc."}, {"symbol": "AAPL", "name": "Apple Inc."},
+    {"symbol": "AAPG", "name": "Ascentage Pharma Group International"}, {"symbol": "AAT", "name": "American Assets Trust, Inc."},
+    {"symbol": "ABBV", "name": "AbbVie Inc."}, {"symbol": "ABC", "name": "AmerisourceBergen Corporation"},
+    {"symbol": "ABNB", "name": "Airbnb, Inc."}, {"symbol": "ABT", "name": "Abbott Laboratories"},
+    {"symbol": "ACAD", "name": "ACADIA Pharmaceuticals Inc."}, {"symbol": "ACGL", "name": "Arch Capital Group Ltd."},
+    {"symbol": "ACN", "name": "Accenture plc"}, {"symbol": "ADBE", "name": "Adobe Inc."},
+    {"symbol": "ADI", "name": "Analog Devices, Inc."}, {"symbol": "ADM", "name": "Archer-Daniels-Midland Company"},
+    {"symbol": "ADP", "name": "Automatic Data Processing, Inc."}, {"symbol": "ADSK", "name": "Autodesk, Inc."},
+    {"symbol": "AEM", "name": "Agnico Eagle Mines Limited"}, {"symbol": "AEO", "name": "American Eagle Outfitters, Inc."},
+    {"symbol": "AEP", "name": "American Electric Power Company, Inc."}, {"symbol": "AES", "name": "The AES Corporation"},
+    {"symbol": "AFL", "name": "Aflac Incorporated"}, {"symbol": "AGG", "name": "iShares Core U.S. Aggregate Bond ETF"},
+    {"symbol": "AI", "name": "C3.ai, Inc."}, {"symbol": "AIG", "name": "American International Group"},
+    {"symbol": "AIR", "name": "AAR Corp."}, {"symbol": "AKAM", "name": "Akamai Technologies, Inc."},
+    {"symbol": "ALB", "name": "Albemarle Corporation"}, {"symbol": "ALLY", "name": "Ally Financial Inc."},
+    {"symbol": "AMAT", "name": "Applied Materials, Inc."}, {"symbol": "AMD", "name": "Advanced Micro Devices, Inc."},
+    {"symbol": "AME", "name": "AMETEK, Inc."}, {"symbol": "AMGN", "name": "Amgen Inc."},
+    {"symbol": "AMT", "name": "American Tower Corporation"}, {"symbol": "AMZN", "name": "Amazon.com, Inc."},
+    {"symbol": "ANET", "name": "Arista Networks, Inc."}, {"symbol": "ANF", "name": "Abercrombie & Fitch Co."},
+    {"symbol": "AON", "name": "Aon plc"}, {"symbol": "APA", "name": "APA Corporation"},
+    {"symbol": "APD", "name": "Air Products and Chemicals, Inc."}, {"symbol": "APH", "name": "Amphenol Corporation"},
+    {"symbol": "APP", "name": "AppLovin Corporation"}, {"symbol": "ARM", "name": "Arm Holdings plc"},
+    {"symbol": "ASML", "name": "ASML Holding N.V."}, {"symbol": "AVGO", "name": "Broadcom Inc."}, {"symbol": "AZN", "name": "AstraZeneca PLC"},
+    {"symbol": "BAC", "name": "Bank of America Corp."},
+    {"symbol": "BABA", "name": "Alibaba Group Holding Ltd."}, {"symbol": "BIDU", "name": "Baidu, Inc."},
+    {"symbol": "BRK-B", "name": "Berkshire Hathaway Inc. Class B"}, {"symbol": "C", "name": "Citigroup Inc."},
+    {"symbol": "COIN", "name": "Coinbase Global, Inc."}, {"symbol": "CRM", "name": "Salesforce, Inc."},
+    {"symbol": "DIS", "name": "The Walt Disney Company"}, {"symbol": "GOOGL", "name": "Alphabet Inc. Class A"},
+    {"symbol": "GOOG", "name": "Alphabet Inc. Class C"}, {"symbol": "IBM", "name": "International Business Machines"},
+    {"symbol": "INTC", "name": "Intel Corporation"}, {"symbol": "JPM", "name": "JPMorgan Chase & Co."},
+    {"symbol": "KO", "name": "The Coca-Cola Company"}, {"symbol": "MA", "name": "Mastercard Incorporated"},
+    {"symbol": "MCD", "name": "McDonald\'s Corporation"}, {"symbol": "META", "name": "Meta Platforms, Inc."},
+    {"symbol": "MSFT", "name": "Microsoft Corporation"}, {"symbol": "NFLX", "name": "Netflix, Inc."},
+    {"symbol": "NIO", "name": "NIO Inc."}, {"symbol": "NKE", "name": "NIKE, Inc."},
+    {"symbol": "NVDA", "name": "NVIDIA Corporation"}, {"symbol": "ORCL", "name": "Oracle Corporation"},
+    {"symbol": "PDD", "name": "PDD Holdings Inc."}, {"symbol": "PEP", "name": "PepsiCo, Inc."},
+    {"symbol": "PFE", "name": "Pfizer Inc."}, {"symbol": "PLTR", "name": "Palantir Technologies Inc."},
+    {"symbol": "PYPL", "name": "PayPal Holdings, Inc."}, {"symbol": "SHOP", "name": "Shopify Inc."},
+    {"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust"}, {"symbol": "TSLA", "name": "Tesla, Inc."},
+    {"symbol": "TSM", "name": "Taiwan Semiconductor Manufacturing Co., Ltd."}, {"symbol": "UBER", "name": "Uber Technologies, Inc."},
+    {"symbol": "UNH", "name": "UnitedHealth Group Incorporated"}, {"symbol": "V", "name": "Visa Inc."},
+    {"symbol": "VOO", "name": "Vanguard S&P 500 ETF"}, {"symbol": "WMT", "name": "Walmart Inc."},
+    {"symbol": "XOM", "name": "Exxon Mobil Corporation"}, {"symbol": "0700.HK", "name": "Tencent Holdings Ltd."},
+    {"symbol": "9988.HK", "name": "Alibaba Group Holding Ltd."}, {"symbol": "9618.HK", "name": "JD.com, Inc."},
+    {"symbol": "1299.HK", "name": "AIA Group Limited"}, {"symbol": "1211.HK", "name": "BYD Company Limited"},
+    {"symbol": "600519.SS", "name": "Kweichow Moutai Co., Ltd."}, {"symbol": "000858.SZ", "name": "Wuliangye Yibin Co., Ltd."},
+    {"symbol": "601318.SS", "name": "Ping An Insurance"}, {"symbol": "600036.SS", "name": "China Merchants Bank"},
+    {"symbol": "000001.SZ", "name": "Ping An Bank Co., Ltd."}, {"symbol": "300750.SZ", "name": "Contemporary Amperex Technology"}
+]
 
 TRANSLATIONS = {
     "en": {
         "ticker_required": "Ticker is required.",
         "date_format": "Dates must use YYYY-MM-DD format.",
-        "forecast_days": "Forecast days must be between 1 and 60.",
+        "forecast_days": "Forecast days must be between 1 and 30.",
         "end_before_start": "End date cannot be earlier than start date.",
         "future_adjusted": "End date was adjusted to {date} because future market data does not exist.",
         "start_later": "Start date cannot be later than the adjusted end date.",
@@ -59,11 +113,13 @@ TRANSLATIONS = {
         "factor_events": "Market events",
         "news_query": "{ticker} stock OR {name} stock",
         "last_trading_day": "Last Trading Day",
+        "date_range_sep": " to ",
+        "backtest_note": "Backtest applies a simple MA5/MA20 trend-following rule with volume confirmation on recent real history. It is for validation only.",
     },
     "zh": {
         "ticker_required": "必须输入股票代码。",
         "date_format": "日期必须使用 YYYY-MM-DD 格式。",
-        "forecast_days": "预测天数必须在 1 到 60 之间。",
+        "forecast_days": "预测天数必须在 1 到 30 之间。",
         "end_before_start": "结束日期不能早于开始日期。",
         "future_adjusted": "由于未来没有真实市场数据，结束日期已自动调整为 {date}。",
         "start_later": "开始日期不能晚于调整后的结束日期。",
@@ -94,6 +150,8 @@ TRANSLATIONS = {
         "factor_events": "市场事件",
         "news_query": "{ticker} 股票 OR {name} 股票",
         "last_trading_day": "最后交易日",
+        "date_range_sep": " 至 ",
+        "backtest_note": "回测使用 MA5/MA20 趋势规则并结合成交量确认，在最近真实历史行情中进行模拟验证，仅供参考。",
     },
 }
 
@@ -193,14 +251,31 @@ def _extract_points(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     timestamps = result.get("timestamp") or []
     indicators = ((result.get("indicators") or {}).get("quote") or [])
     quotes = indicators[0] if indicators else {}
+    opens = quotes.get("open") or []
+    highs = quotes.get("high") or []
+    lows = quotes.get("low") or []
     closes = quotes.get("close") or []
-    dedup: Dict[str, float] = {}
-    for ts, close in zip(timestamps, closes):
-        if ts is None or close is None:
+    volumes = quotes.get("volume") or []
+    dedup: Dict[str, Dict[str, Any]] = {}
+    for ts, open_, high_, low_, close_, volume_ in zip(timestamps, opens, highs, lows, closes, volumes):
+        if ts is None or close_ is None:
             continue
         day = dt.datetime.utcfromtimestamp(int(ts)).strftime("%Y-%m-%d")
-        dedup[day] = round(float(close), 2)
-    return [{"date": day, "close": price} for day, price in dedup.items()]
+        open_v = round(float(open_ if open_ is not None else close_), 2)
+        close_v = round(float(close_), 2)
+        high_v = round(float(high_ if high_ is not None else max(open_v, close_v)), 2)
+        low_v = round(float(low_ if low_ is not None else min(open_v, close_v)), 2)
+        volume_v = int(volume_ or 0)
+        dedup[day] = {
+            "date": day,
+            "open": open_v,
+            "high": high_v,
+            "low": low_v,
+            "close": close_v,
+            "volume": volume_v,
+        }
+    return list(dedup.values())
+
 
 def _download_real_history(config: AnalysisConfig) -> Dict[str, Any]:
     lang = get_lang(config.lang)
@@ -246,6 +321,8 @@ def _download_real_history(config: AnalysisConfig) -> Dict[str, Any]:
     data_note = adjusted_note or t(lang, "download_note")
     return {
         "stock_name": stock_name,
+        "start_date_used": start_date.isoformat(),
+        "end_date_used": end_date.isoformat(),
         "summary": summary,
         "chart_points": points,
         "sample_data": points[-10:],
@@ -518,6 +595,198 @@ def fetch_news(ticker: str, stock_name: str, lang: str, refresh_seq: int = 0) ->
     return {"items": page, "pool_total": len(candidates), "slice_label": f"{(refresh_seq % max(1, (len(candidates)+7)//8))+1}/{max(1, (len(candidates)+7)//8)}"}
 
 
+def fetch_remote_suggestions(query: str, limit: int = 50) -> List[Dict[str, str]]:
+    q = (query or "").strip()
+    if not q:
+        return []
+    params = urllib.parse.urlencode({"q": q, "quotesCount": str(limit), "newsCount": "0", "enableFuzzyQuery": "false"})
+    url = f"{YAHOO_SEARCH_ENDPOINT}?{params}"
+    try:
+        payload = _fetch_json(url)
+    except Exception:
+        return []
+
+    target = q.upper()
+    items: List[Dict[str, str]] = []
+    seen: set[str] = set()
+    for raw in payload.get("quotes") or []:
+        symbol = str(raw.get("symbol") or "").upper().strip()
+        name = str(raw.get("shortname") or raw.get("longname") or raw.get("name") or symbol).strip()
+        exch = str(raw.get("exchange") or raw.get("exchDisp") or "").strip()
+        quote_type = str(raw.get("quoteType") or "").lower()
+        if not symbol or symbol in seen:
+            continue
+        if quote_type not in {"equity", "etf", "index", "mutualfund", "adr", "trust", "crypto"} and quote_type:
+            continue
+        seen.add(symbol)
+        display_name = name if not exch else f"{name} · {exch}"
+        items.append({"symbol": symbol, "name": display_name})
+
+    starts = [it for it in items if it["symbol"].startswith(target) or it["name"].upper().startswith(target)]
+    contains = [it for it in items if it not in starts and (target in it["symbol"] or target in it["name"].upper())]
+    return (starts + contains)[:limit]
+
+
+def suggest_tickers(query: str, limit: int = 50) -> List[Dict[str, str]]:
+    q = (query or "").strip().upper()
+    remote = fetch_remote_suggestions(q, limit=limit)
+
+    if not q:
+        local_starts = SUGGESTION_UNIVERSE[:]
+        local_contains: List[Dict[str, str]] = []
+    else:
+        local_starts = []
+        local_contains = []
+        for item in SUGGESTION_UNIVERSE:
+            symbol = item["symbol"].upper()
+            name = item["name"].upper()
+            if symbol.startswith(q) or name.startswith(q):
+                local_starts.append(item)
+            elif q in symbol or q in name:
+                local_contains.append(item)
+
+    ordered: List[Dict[str, str]] = []
+    seen: set[str] = set()
+    for bucket in (remote, local_starts, local_contains):
+        for item in bucket:
+            symbol = item["symbol"]
+            if symbol in seen:
+                continue
+            seen.add(symbol)
+            ordered.append(item)
+            if len(ordered) >= limit:
+                return ordered
+    return ordered
+
+
+
+def run_backtest(points: List[Dict[str, Any]], lang: str) -> Dict[str, Any]:
+    lang = get_lang(lang)
+    base = {
+        "return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "win_rate_pct": 0.0,
+        "trades": 0,
+        "buy_hold_return_pct": 0.0,
+        "alpha_vs_buy_hold_pct": 0.0,
+        "equity_curve": [],
+        "trade_log": [],
+        "note": t(lang, "backtest_note"),
+    }
+    if len(points) < 30:
+        return base
+
+    closes = [float(p["close"]) for p in points]
+    vols = [float(p.get("volume") or 0) for p in points]
+
+    def rolling_mean(values: List[float], window: int) -> List[float | None]:
+        out: List[float | None] = [None] * len(values)
+        for i in range(window - 1, len(values)):
+            out[i] = sum(values[i - window + 1:i + 1]) / window
+        return out
+
+    ma5 = rolling_mean(closes, 5)
+    ma20 = rolling_mean(closes, 20)
+    vol20 = rolling_mean(vols, 20)
+
+    equity = 1.0
+    peak = 1.0
+    max_dd = 0.0
+    position = False
+    entry = 0.0
+    entry_date = ""
+    trade_returns: List[float] = []
+    trade_log: List[Dict[str, Any]] = []
+    equity_curve: List[Dict[str, Any]] = []
+
+    for i in range(20, len(points)):
+        point = points[i]
+        price = closes[i]
+        date = point.get("date") or ""
+        buy_signal = (
+            ma5[i] is not None and ma20[i] is not None and vol20[i] is not None and
+            ma5[i] > ma20[i] and price > ma5[i] and vols[i] >= vol20[i]
+        )
+        sell_signal = (
+            ma5[i] is not None and ma20[i] is not None and (ma5[i] < ma20[i] or price < ma5[i])
+        )
+
+        action = "HOLD"
+        if not position and buy_signal:
+            position = True
+            entry = price
+            entry_date = date
+            action = "BUY"
+        elif position and sell_signal:
+            ret = (price - entry) / entry if entry else 0.0
+            trade_returns.append(ret)
+            equity *= (1 + ret)
+            peak = max(peak, equity)
+            dd = (equity - peak) / peak if peak else 0.0
+            max_dd = min(max_dd, dd)
+            trade_log.append({
+                "entry_date": entry_date,
+                "entry_price": round(entry, 2),
+                "exit_date": date,
+                "exit_price": round(price, 2),
+                "return_pct": round(ret * 100, 2),
+            })
+            position = False
+            entry = 0.0
+            entry_date = ""
+            action = "SELL"
+
+        marked_equity = equity
+        if position and entry:
+            marked_equity = equity * (price / entry)
+        peak = max(peak, marked_equity)
+        dd_marked = (marked_equity - peak) / peak if peak else 0.0
+        max_dd = min(max_dd, dd_marked)
+        equity_curve.append({
+            "date": date,
+            "equity": round(marked_equity, 4),
+            "close": round(price, 2),
+            "action": action,
+        })
+
+    if position and entry:
+        final_price = closes[-1]
+        final_date = points[-1].get("date") or ""
+        ret = (final_price - entry) / entry
+        trade_returns.append(ret)
+        equity *= (1 + ret)
+        peak = max(peak, equity)
+        dd = (equity - peak) / peak if peak else 0.0
+        max_dd = min(max_dd, dd)
+        trade_log.append({
+            "entry_date": entry_date,
+            "entry_price": round(entry, 2),
+            "exit_date": final_date,
+            "exit_price": round(final_price, 2),
+            "return_pct": round(ret * 100, 2),
+        })
+        if equity_curve:
+            equity_curve[-1]["equity"] = round(equity, 4)
+            equity_curve[-1]["action"] = "SELL"
+
+    trades = len(trade_returns)
+    wins = sum(1 for r in trade_returns if r > 0)
+    win_rate = (wins / trades * 100) if trades else 0.0
+    buy_hold = ((closes[-1] / closes[20]) - 1) * 100 if closes[20] else 0.0
+    strategy_return = (equity - 1) * 100
+    base.update({
+        "return_pct": round(strategy_return, 2),
+        "max_drawdown_pct": round(abs(max_dd) * 100, 2),
+        "win_rate_pct": round(win_rate, 2),
+        "trades": trades,
+        "buy_hold_return_pct": round(buy_hold, 2),
+        "alpha_vs_buy_hold_pct": round(strategy_return - buy_hold, 2),
+        "equity_curve": equity_curve,
+        "trade_log": trade_log[-8:],
+    })
+    return base
+
+
 def quote_snapshot(ticker: str) -> Dict[str, Any]:
     end = dt.date.today()
     start = end - dt.timedelta(days=45)
@@ -567,6 +836,7 @@ def analyse_stock(config: AnalysisConfig) -> Dict[str, Any]:
     lang = get_lang(config.lang)
     data = _download_real_history(config)
     forecast = fallback_forecast(data["chart_points"], config.forecast_days, data["summary"], lang)
+    backtest = run_backtest(data["chart_points"], lang)
     news_items: List[Dict[str, str]] = []
     try:
         news_payload = fetch_news(config.ticker, data["stock_name"], lang, refresh_seq=0)
@@ -588,7 +858,7 @@ def analyse_stock(config: AnalysisConfig) -> Dict[str, Any]:
         "status": "ok",
         "ticker": config.ticker.upper(),
         "stock_name": data["stock_name"],
-        "date_range": f"{config.start_date} to {config.end_date}",
+        "date_range": f"{data['start_date_used']}{t(lang, 'date_range_sep')}{data['end_date_used']}",
         "forecast_days": config.forecast_days,
         "generated_at": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "source": data["source"],
@@ -608,6 +878,7 @@ def analyse_stock(config: AnalysisConfig) -> Dict[str, Any]:
             "predicted_range_high": forecast["predicted_range_high"],
         },
         "forecast_points": forecast["forecast_points"],
+        "backtest": backtest,
         "last_trading_day": data["last_trading_day"],
         "last_trading_day_label": t(lang, "last_trading_day"),
         "news": news_items,
@@ -656,6 +927,12 @@ class AppHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._send_json({"status": "error", "message": str(exc), "items": [], "pool_total": 0}, status=500)
             return
+        if parsed.path == "/api/suggest":
+            params = urllib.parse.parse_qs(parsed.query)
+            query = (params.get("q") or [""])[0]
+            items = suggest_tickers(query, limit=50)
+            self._send_json({"status": "ok", "items": items})
+            return
         if parsed.path == "/api/market":
             params = urllib.parse.parse_qs(parsed.query)
             symbols = (params.get("symbols") or ["AAPL,MSFT,NVDA,TSLA,GOOGL,AMZN"])[0]
@@ -679,20 +956,24 @@ class AppHandler(BaseHTTPRequestHandler):
             body = self.rfile.read(content_length).decode("utf-8") if content_length else "{}"
             payload = json.loads(body or "{}")
             ticker = str(payload.get("ticker", "")).strip()
-            start_date = str(payload.get("start_date", "")).strip()
-            end_date = str(payload.get("end_date", "")).strip()
             forecast_days = int(payload.get("forecast_days", 7))
             lang = get_lang(payload.get("lang", "en"))
             if not ticker:
                 self._send_json({"status": "error", "message": t(lang, "ticker_required")}, status=400)
                 return
+            if forecast_days < 1 or forecast_days > 30:
+                self._send_json({"status": "error", "message": t(lang, "forecast_days")}, status=400)
+                return
+            start_date = str(payload.get("start_date", "")).strip()
+            end_date = str(payload.get("end_date", "")).strip()
+            if not start_date or not end_date:
+                today = dt.date.today()
+                end_date = today.isoformat()
+                start_date = (today - dt.timedelta(days=365)).isoformat()
             if not validate_date(start_date) or not validate_date(end_date):
                 self._send_json({"status": "error", "message": t(lang, "date_format")}, status=400)
                 return
-            if forecast_days < 1 or forecast_days > 60:
-                self._send_json({"status": "error", "message": t(lang, "forecast_days")}, status=400)
-                return
-            if end_date < start_date:
+            if dt.datetime.strptime(end_date, "%Y-%m-%d").date() < dt.datetime.strptime(start_date, "%Y-%m-%d").date():
                 self._send_json({"status": "error", "message": t(lang, "end_before_start")}, status=400)
                 return
             self._send_json(analyse_stock(AnalysisConfig(ticker=ticker, start_date=start_date, end_date=end_date, forecast_days=forecast_days, lang=lang)))
@@ -725,7 +1006,7 @@ def main() -> None:
     server = ThreadingHTTPServer((host, port), AppHandler)
 
     if not is_render:
-        threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{port}/?v=11")).start()
+        threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{port}/?v=15")).start()
         print(f"Server running at http://127.0.0.1:{port}")
         print("Keep this terminal open while the web app is running.")
     else:

@@ -1,7 +1,7 @@
 @echo off
 cd /d %~dp0
 
-echo Starting CP3405 Smart Stock Dashboard v7...
+echo Starting CP3405 Smart Stock Dashboard v16...
 echo This version opens on a fresh local port and disables cache.
 echo Keep this terminal window open while using the webpage.
 echo.
