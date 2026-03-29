@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CP3405 Smart Stock Dashboard v21</title>
+  <style>
+    :root{
+      --bg:#eef3fb; --bg2:#f7f9fe; --card:#ffffffec; --card2:#ffffff; --text:#172033; --muted:#66758f;
+      --line:#d8e1ef; --accent:#4f46e5; --accent2:#8b5cf6; --chip:#eef2ff; --shadow:0 18px 44px rgba(30,41,59,.08);
+      --ok:#16a34a; --danger:#dc2626; --panel:#f8fbff; --panel2:#f1f6ff; --panelLine:#d8e4f7; --panelText:#152238; --panelMuted:#667995;
+      --chartBg1:#f8fbff; --chartBg2:#eef4ff; --chartGrid:rgba(71,85,105,.16); --chartAxis:#64748b;
+      --forecastCardBg:#f7f9ff;
+    }
+    body.dark{
+      --bg:#07101c; --bg2:#0b1527; --card:#0f172ae8; --card2:#111c31; --text:#eff5ff; --muted:#9fb0ca;
+      --line:#22324d; --chip:#13253d; --shadow:0 18px 44px rgba(0,0,0,.34); --panel:#0f1726; --panel2:#121d31; --panelLine:#263652;
+      --chartBg1:#07111f; --chartBg2:#0d1a2f; --chartGrid:rgba(148,163,184,.18); --chartAxis:#94a3b8;
+      --forecastCardBg:#0f1726;
+    }
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{
+      font-family:Inter,Arial,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--text);
+      background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 13%, transparent),transparent 25%),linear-gradient(180deg,var(--bg),var(--bg2));min-height:100vh
+    }
+    .shell{max-width:1460px;margin:0 auto;padding:18px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+    .topbar{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:14px 16px}
+    .brand-row{display:flex;align-items:center;gap:16px;min-width:0;flex-wrap:wrap}
+    .logo{height:64px;width:64px;border-radius:20px;display:grid;place-items:center;color:#fff;font-weight:900;font-size:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));flex:0 0 auto}
+    .tabbar{display:flex;gap:10px;flex-wrap:wrap}
+    .tab{height:44px;padding:0 18px;border-radius:16px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-weight:800;cursor:pointer}
+    .tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+    .tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .tool,button,select,input{font:inherit}
+    .tool,.btn,.tab,input,select{transition:.18s ease}
+    .tool{height:42px;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text)}
+    .tool.compact{width:150px}
+    .page{display:none}.page.active{display:block}
+    .input-card,.hero-card,.chart-card,.side-card,.table-card,.news-card,.watch-card,.widget-card{padding:18px}
+    .input-head,.hero-head,.section-head,.chart-head,.widget-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+    .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}
+    .title{margin:2px 0 0;font-size:24px;line-height:1.1}.desc{display:none}
+    .inline-note{display:none}
+    .input-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr auto auto;gap:12px;align-items:end}
+    label{display:block;margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:800}
+    input,select{width:100%;padding:13px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card2);color:var(--text);outline:none}
+    input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 15%, transparent)}
+    .btn{border:none;border-radius:16px;padding:13px 18px;font-weight:800;cursor:pointer;white-space:nowrap}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+    .btn.secondary{background:var(--card2);border:1px solid var(--line);color:var(--text)}
+    .quick-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+    .chip-btn,.watch-pill{padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card2);cursor:pointer;color:var(--text);font-weight:700}
+    .status-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:14px}
+    .status{font-size:13px;color:var(--muted)}
+    .error{display:none;padding:12px 14px;border-radius:16px;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2);color:var(--danger);white-space:pre-wrap;line-height:1.6}
+    .loading{display:none;color:var(--muted);font-size:14px}
+    .hero-name{font-size:38px;line-height:1.05;margin:0}.hero-meta{margin-top:8px;color:var(--muted);line-height:1.7}
+    .badges{display:flex;gap:10px;flex-wrap:wrap}.badge{padding:10px 14px;border-radius:999px;background:var(--chip);color:var(--accent);font-weight:800;font-size:13px}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .metric{padding:16px;border:1px solid var(--line);background:var(--card2);border-radius:20px;min-height:112px;display:flex;flex-direction:column;justify-content:space-between}
+    .metric .k{font-size:13px;color:var(--muted);font-weight:800}.metric .v{font-size:32px;font-weight:900;line-height:1.1}.metric .s{font-size:12px;color:var(--muted)}
+    .main-grid{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(320px,.82fr);gap:16px;margin-top:16px}
+    .chart-box{height:620px;position:relative;border-radius:22px;overflow:hidden;background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 14%, transparent),transparent 28%),linear-gradient(180deg,var(--chartBg1),var(--chartBg2));border:1px solid var(--line)}.chart-box svg{width:100%;height:100%;display:block}
+    .grid-line{stroke:var(--chartGrid);stroke-width:1;shape-rendering:crispEdges}.axis-label{fill:var(--chartAxis);font-size:11px;text-rendering:geometricPrecision}.candle-up{fill:#22c55e;stroke:#22c55e}.candle-down{fill:#ef4444;stroke:#ef4444}.candle-wick-up{stroke:#22c55e;stroke-width:1.4;vector-effect:non-scaling-stroke;shape-rendering:geometricPrecision}.candle-wick-down{stroke:#ef4444;stroke-width:1.4;vector-effect:non-scaling-stroke;shape-rendering:geometricPrecision}.line-main{fill:none;stroke:#60a5fa;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;opacity:.98;vector-effect:non-scaling-stroke;shape-rendering:geometricPrecision}.volume-up{fill:rgba(34,197,94,.5)}.volume-down{fill:rgba(239,68,68,.45)}
+    .suggest-wrap{position:relative}.suggest-box{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:25;background:var(--card2);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);max-height:280px;overflow:auto;display:none}.suggest-box.active{display:block}.suggest-item{padding:11px 14px;display:flex;justify-content:space-between;gap:14px;cursor:pointer;border-bottom:1px solid var(--line)}.suggest-item:last-child{border-bottom:none}.suggest-item:hover{background:color-mix(in srgb,var(--accent) 8%, var(--card2))}.suggest-symbol{font-weight:800}.suggest-name{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+    .factor-list,.bullet{margin:0;padding-left:20px}.factor-list li,.bullet li{margin:10px 0;line-height:1.65}
+    .note{margin-top:14px;padding:14px 16px;border-radius:16px;background:color-mix(in srgb,var(--accent) 8%, var(--card2));border:1px solid var(--line);line-height:1.7}
+    .forecast-stats{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .forecast-stat{padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--card2)}
+    .forecast-stat .k{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:6px}
+    .forecast-stat .v{font-size:24px;font-weight:900}
+        .forecast-visual-card{margin-top:14px;padding:14px;border-radius:18px;border:1px solid var(--line);background:var(--forecastCardBg)}
+    .forecast-visual-title{font-size:13px;color:var(--muted);font-weight:800;margin:0 0 10px}
+    .forecast-visual-box{height:220px;position:relative}
+    .forecast-visual-box svg{width:100%;height:100%;display:block}
+    .forecast-bg-grid{stroke:var(--line);stroke-width:1}
+    .forecast-band{fill:color-mix(in srgb,var(--accent) 12%, transparent);stroke:color-mix(in srgb,var(--accent) 18%, transparent)}
+    .forecast-axis{fill:var(--muted);font-size:11px}
+    .forecast-mini-line{fill:none;stroke:#fb7185;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:8 7}
+    .forecast-mini-start{fill:#fb7185}
+    .forecast-mini-end{fill:#ef4444}
+    .forecast-tag{fill:var(--text);font-size:11px;font-weight:800}
+    .forecast-pill{fill:var(--chip);stroke:var(--line)}
+    .detail-grid{display:grid;grid-template-columns:minmax(0,1.65fr) 360px;gap:16px}
+    .stack{display:grid;gap:16px}
+    .table-wrap table{width:100%;border-collapse:collapse}.table-wrap th,.table-wrap td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}.table-wrap th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+    .news-list{display:grid;gap:12px}.news-item{display:block;text-decoration:none;color:inherit;padding:14px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--accent) 4%, var(--card2))}.news-item strong{display:block;line-height:1.45;margin-bottom:6px}.news-meta{font-size:12px;color:var(--muted)}
+    .watch-layout{display:grid;grid-template-columns:330px 1fr;gap:16px}.watch-list{display:grid;gap:10px}.watch-item{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card2);cursor:pointer}.watch-item button{margin-left:auto;border:none;background:transparent;color:var(--danger);font-size:18px;cursor:pointer}
+    .empty{padding:22px 14px;border-radius:16px;border:1px dashed var(--line);text-align:center;color:var(--muted);background:color-mix(in srgb,var(--accent) 3%, var(--card2))}
+    .small{display:none}
+    .ver{display:none}
+    .widget-panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border-color:var(--panelLine);color:var(--panelText);box-shadow:0 12px 30px rgba(42,73,124,.06)}
+    .widget-panel .eyebrow,.widget-panel .small,.widget-panel .desc,.widget-panel .news-meta,.widget-panel .widget-muted{color:var(--panelMuted)}
+    .widget-input{background:rgba(255,255,255,.04);border-color:var(--panelLine);color:var(--panelText)}
+    .widget-input::placeholder{color:var(--panelMuted)}
+    .widget-search{display:grid;grid-template-columns:1fr auto;gap:10px}
+    .widget-list{display:grid;gap:10px}
+    .ticker-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--panelLine);border-radius:14px;background:color-mix(in srgb,var(--panel2) 88%, white 12%);cursor:pointer}
+    .ticker-main{display:flex;flex-direction:column;gap:4px;min-width:0}.ticker-symbol{font-weight:800}.ticker-name{font-size:12px;color:var(--panelMuted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+    .ticker-price{text-align:right;font-weight:800}.chg-up{color:#34d399}.chg-down{color:#fb7185}.spark{width:72px;height:18px}
+    .mini-card{padding:14px;border-radius:16px;border:1px solid var(--panelLine);background:color-mix(in srgb,var(--panel2) 88%, white 12%)}
+    .mini-card h4{margin:0 0 10px}.mini-grid{display:grid;gap:10px}
+    .status-inline{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.5}
+    .widget-status{font-size:12px;color:var(--panelMuted);margin-top:10px;line-height:1.5}
+    .widget-status.ok,.status-inline.ok{color:var(--ok)}
+    .widget-status.err,.status-inline.err{color:var(--danger)}
+    .range-note{margin-top:12px;padding:12px 14px;border-radius:16px;border:1px dashed var(--line);background:color-mix(in srgb,var(--accent) 5%, var(--card2));color:var(--muted);line-height:1.65}
+    .backtest-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+    .backtest-card{padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--card2)}
+    .backtest-card .k{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:6px}
+    .backtest-card .v{font-size:24px;font-weight:900}
+    .backtest-note{display:none}.backtest-page-grid{display:grid;grid-template-columns:minmax(0,1.4fr) 360px;gap:16px;margin-top:16px}.equity-chart-box{height:360px;position:relative;border-radius:22px;overflow:hidden;background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 12%, transparent),transparent 30%),linear-gradient(180deg,var(--chartBg1),var(--chartBg2));border:1px solid var(--line)}.equity-chart-box svg{width:100%;height:100%;display:block;shape-rendering:geometricPrecision}.trade-log{display:grid;gap:10px;max-height:520px;overflow:auto}.trade-row{padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card2)}.trade-row strong{display:block;margin-bottom:6px}.fixed-range-note{padding:12px 14px;border-radius:16px;border:1px dashed var(--line);background:color-mix(in srgb,var(--accent) 5%, var(--card2));color:var(--muted);line-height:1.6}.subtle{color:var(--muted);font-size:13px}.bt-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:12px;font-weight:700}.bt-dot{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:6px;vertical-align:middle}.eq-line{fill:none;stroke:#38bdf8;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.eq-benchmark{fill:none;stroke:#f59e0b;stroke-width:2.2;stroke-dasharray:8 7;vector-effect:non-scaling-stroke}.eq-buy{fill:#22c55e}.eq-sell{fill:#ef4444}
+
+    .chart-head{position:relative}
+    .chart-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .chart-tool{height:38px;min-width:38px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-weight:800;cursor:pointer}
+    .chart-tool:hover{transform:translateY(-1px);border-color:var(--accent)}
+    .chart-box{cursor:grab}
+    .chart-box.dragging{cursor:grabbing}
+    .chart-hint{font-size:12px;color:var(--muted);margin-top:8px}
+    .chart-viewport{position:absolute;inset:0;overflow:hidden;touch-action:none}
+    .chart-panzoom-main{position:absolute;inset:0;transform-origin:center center;will-change:transform}
+    .chart-floating-tools{position:absolute;top:14px;right:14px;display:flex;gap:8px;z-index:8;flex-wrap:wrap}
+    .chart-floating-tool{height:36px;min-width:36px;padding:0 10px;border-radius:11px;border:1px solid var(--line);background:color-mix(in srgb,var(--card2) 92%, transparent);color:var(--text);font-weight:900;cursor:pointer;backdrop-filter:blur(8px)}
+    .chart-floating-tool:hover{border-color:var(--accent)}
+    .chart-box .chart-floating-tool{box-shadow:var(--shadow)}
+    .chart-box .chart-floating-tool span{display:inline-block;transform:translateY(-1px)}
+    .chart-box.light-surface{background:linear-gradient(180deg,var(--chartBg1),var(--chartBg2))}
+    .core-widget-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
+    .core-widget-card{padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--card2)}
+    .core-widget-card .k{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:6px}
+    .core-widget-card .v{font-size:24px;font-weight:900;line-height:1.1}
+    .core-widget-card .s{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+    .core-summary-card{display:none}
+    .chart-tooltip{position:absolute;z-index:12;pointer-events:none;display:none;min-width:164px;max-width:260px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--card2) 96%, transparent);color:var(--text);box-shadow:var(--shadow);backdrop-filter:blur(10px);font-size:12px;line-height:1.55}
+    .chart-tooltip strong{display:block;margin-bottom:4px;font-size:13px}
+    .chart-tooltip .muted{color:var(--muted)}
+    .chart-date-badge{position:absolute;z-index:11;display:none;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:color-mix(in srgb,var(--card2) 96%, transparent);color:var(--text);box-shadow:var(--shadow);backdrop-filter:blur(10px);font-size:12px;font-weight:800;pointer-events:none;white-space:nowrap}
+    .chart-crosshair{stroke:var(--accent);stroke-width:1.1;stroke-dasharray:5 5;opacity:.7;display:none}
+    .candle-group{cursor:pointer}
+    .chart-modal{position:fixed;inset:0;background:rgba(3,8,20,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:18px;z-index:1200}
+    .chart-modal.active{display:flex}
+    .chart-modal-card{width:min(1400px,96vw);height:min(92vh,980px);background:var(--card);border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow);display:grid;grid-template-rows:auto 1fr;overflow:hidden}
+    .chart-modal-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+    .chart-modal-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .chart-stage{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--chartBg1),var(--chartBg2))}
+    .chart-panzoom{position:absolute;inset:0;touch-action:none;transform-origin:center center;cursor:grab}
+    .chart-panzoom.dragging{cursor:grabbing}
+    .chart-panzoom svg{width:100%;height:100%;display:block}
+    .chart-modal-note{font-size:12px;color:var(--muted)}
+
+
+    .landing-page{margin-top:16px}
+    .landing-wrap{min-height:calc(100vh - 150px);display:flex;align-items:center;justify-content:center;padding:32px}
+    .landing-left{display:none}
+    .landing-panel{width:min(1280px,100%);min-height:540px;padding:34px 52px 28px;border-radius:30px;display:flex;flex-direction:column;justify-content:center}
+    .landing-panel .title{font-size:34px;line-height:1.15;margin:6px 0 0}
+    .landing-panel .desc{display:none !important}
+    .landing-panel .input-grid{grid-template-columns:minmax(620px,2.4fr) 240px auto;gap:18px;align-items:end;width:min(1260px,100%);margin:0 auto}
+    .landing-panel #ticker{min-height:86px;padding:18px 24px;font-size:36px;border-radius:22px}
+    .landing-panel #forecastDays{min-height:86px;padding:18px 20px;font-size:34px;border-radius:22px}
+    .landing-panel #analyzeBtn{min-height:70px;padding:0 28px;font-size:18px;border-radius:20px}
+    .landing-panel .landing-actions .btn{min-height:58px;padding:0 22px;font-size:18px}
+    .landing-actions{display:flex;gap:12px;flex-wrap:wrap;margin:14px auto 0;width:min(1260px,100%)}
+    .landing-actions .btn{min-width:150px}
+    .landing-panel input{height:58px;padding:0 18px;font-size:22px;border-radius:18px}
+    .landing-panel label{font-size:13px;margin-bottom:10px}
+    .landing-panel .eyebrow{font-size:13px;letter-spacing:.1em}
+    .landing-panel .quick-row{margin:18px auto 0;width:min(1260px,100%)}
+    .landing-panel .chip-btn{padding:11px 16px;font-size:16px}
+    .landing-panel .status-row{margin:16px auto 0;width:min(1260px,100%)}
+    @media (max-width:980px){
+      .landing-wrap{padding:20px}
+      .landing-panel{padding:24px}
+      .landing-panel .input-grid{grid-template-columns:1fr 180px;width:100%;}
+      .landing-panel .btn.primary{width:100%}
+    }
+    @media (max-width:760px){
+      .landing-wrap{padding:14px}
+      .landing-panel{padding:18px}
+      .landing-panel .title{font-size:28px}
+      .landing-panel .desc{font-size:15px}
+      .landing-panel .input-grid{grid-template-columns:1fr;width:100%;}
+      .landing-actions .btn{width:100%}
+    }
+
+    @media (max-width:1240px){
+      .input-grid{grid-template-columns:1fr 1fr 1fr;}.btn{width:100%}.tool.compact{width:auto}
+      .metrics{grid-template-columns:repeat(2,1fr)}.main-grid,.detail-grid,.watch-layout{grid-template-columns:1fr}.chart-box{height:520px}
+    }
+    @media (max-width:760px){
+      .shell{padding:14px}.topbar{padding:12px}.tabbar{width:100%}.hero-name{font-size:24px}.metrics{grid-template-columns:1fr}.chart-box{height:360px}.input-grid{grid-template-columns:1fr}.tools{width:100%}.tool{flex:1}.forecast-stats{grid-template-columns:1fr}.backtest-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar card">
+      <div class="brand-row">
+        <div class="logo">S</div>
+        <div class="tabbar">
+          <button class="tab active" data-page="minimal" id="tabMinimal">Minimal Overview</button>
+          <button class="tab" data-page="detail" id="tabDetail">Finance Detail</button>
+          <button class="tab" data-page="news" id="tabNews">News & Watchlist</button>
+          <button class="tab" data-page="backtest" id="tabBacktest">Backtest</button>
+        </div>
+      </div>
+      <div class="tools">
+        <button class="tool" id="langBtn">中文</button>
+        <button class="tool" id="themeBtn">🌙 Dark</button>
+        <select class="tool compact" id="accentSelect" aria-label="Accent">
+          <option value="indigo">Indigo</option>
+          <option value="sky">Sky</option>
+          <option value="emerald">Emerald</option>
+          <option value="rose">Rose</option>
+          <option value="amber">Amber</option>
+        </select>
+      </div>
+    </div>
+
+    
+    <section class="page active landing-page" id="pageMinimal">
+      <div class="card landing-wrap">
+        <div class="card landing-panel">
+          <div class="input-head" style="width:min(1260px,100%);margin:0 auto 12px;">
+            <div>
+              <div class="eyebrow" data-t="eyebrowInput">Quick Input</div>
+              <h2 class="title" data-t="titleInput">输入股票代码开始分析</h2>
+            </div>
+          </div>
+          <div class="input-grid">
+            <div>
+              <label data-t="tickerLabel">Ticker</label>
+              <div class="suggest-wrap">
+                <input id="ticker" value="AAPL" autocomplete="off" placeholder="AAPL / TSLA / 0700.HK" />
+                <div class="suggest-box" id="tickerSuggest"></div>
+              </div>
+            </div>
+            <div>
+              <label data-t="daysLabel">Forecast Days</label>
+              <input id="forecastDays" type="number" min="1" max="30" value="7" />
+            </div>
+            <button class="btn primary" id="analyzeBtn" data-t="analyzeBtn">Load Analysis</button>
+            <input id="startDate" type="date" hidden />
+            <input id="endDate" type="date" hidden />
+          </div>
+          <div class="landing-actions">
+            <button class="btn secondary" id="savePackBtn" data-t="savePackBtn">Save Pack</button>
+            <button class="btn secondary" id="exportBtn" data-t="exportBtn">Export JSON</button>
+          </div>
+          <div class="quick-row" id="quickRow"></div>
+          <div class="status-row">
+            <div class="loading" id="loadingBox" data-t="loading">Loading real historical data...</div>
+            <div class="error" id="errorBox"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="pageDetail">
+      <section class="hero-card card" style="margin-top:16px">
+        <div class="hero-head">
+          <div>
+            <div class="eyebrow">Overview</div>
+            <h2 class="hero-name" id="heroName">-</h2>
+            <div class="hero-meta" id="heroMeta">-</div>
+          </div>
+          <div class="badges">
+            <div class="badge" id="sourceBadge">-</div>
+            <div class="badge" id="confBadge">-</div>
+            <div class="badge" id="tradeBadge">-</div>
+          </div>
+        </div>
+        <div class="metrics" id="metricsBox"></div>
+      </section>
+
+      <div class="main-grid">
+        <section class="chart-card card">
+          <div class="chart-head">
+            <div>
+              <div class="eyebrow">Price Chart</div>
+              <h3>Historical Trend</h3>
+            </div>
+            <div class="chart-tools">
+              <button class="chart-tool" id="chartZoomInBtn">+</button>
+              <button class="chart-tool" id="chartZoomOutBtn">−</button>
+              <button class="chart-tool" id="chartResetBtn">Reset</button>
+              <button class="chart-tool" id="chartExpandBtn">Expand</button>
+            </div>
+          </div>
+          <div class="chart-box" id="chartBox">
+            <div class="chart-viewport" id="chartViewport">
+              <div class="chart-panzoom-main" id="chartPanzoomMain">
+                <svg id="chartSvg" viewBox="0 0 1400 820" preserveAspectRatio="xMidYMid meet"></svg>
+              </div>
+            </div>
+            <div class="chart-tooltip" id="chartTooltip"></div>
+            <div class="chart-date-badge" id="chartDateBadge"></div>
+          </div>
+        </section>
+        <aside class="side-card card">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Core Signals</div>
+              <h3>Summary</h3>
+            </div>
+          </div>
+          <div class="core-widget-grid" id="coreWidgetGrid"></div>
+          <div class="note" id="coreSummaryBox">-</div>
+          <h4 style="margin-top:16px">Key Factors</h4>
+          <ul class="factor-list" id="factorsList"><li>-</li></ul>
+        </aside>
+      </div>
+
+      <div class="detail-grid" style="margin-top:16px">
+        <div class="stack">
+          <section class="table-card card table-wrap">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow" data-t="eyebrowDetail">Finance Detail</div>
+                <h3 data-t="detailTitle">Professional Data View</h3>
+                
+              </div>
+            </div>
+            <table><tbody id="summaryTable"></tbody></table>
+          </section>
+          <section class="table-card card table-wrap">
+            <div class="section-head">
+              <div>
+                <h4 data-t="sampleTitle">Recent Sample Data</h4>
+                
+              </div>
+            </div>
+            <table>
+              <thead><tr><th data-t="dateCol">Date</th><th data-t="closeCol">Close</th></tr></thead>
+              <tbody id="sampleTable"></tbody>
+            </table>
+          </section>
+          <section class="table-card card">
+            <div class="section-head">
+              <div>
+                <h4 data-t="analysisTitle">Analysis</h4>
+                
+              </div>
+            </div>
+            <p id="analysisText">-</p>
+            <h4 data-t="forecastTitle">Forecast View</h4>
+            <p id="forecastText">-</p>
+            <div class="forecast-stats" id="forecastStats"></div>
+            <div class="forecast-visual-card">
+              <div class="forecast-visual-title" data-t="forecastVisualTitle">Forecast Snapshot</div>
+              <div class="forecast-visual-box"><svg id="forecastPreviewSvg" viewBox="0 0 760 220" preserveAspectRatio="none"></svg></div>
+            </div>
+            <h4 data-t="backtestTitle">Backtest</h4>
+            <div class="backtest-grid" id="backtestStats"></div>
+            <div class="backtest-note" id="backtestNote">-</div>
+          </section>
+        </div>
+
+        <aside class="stack">
+          <section class="widget-card card widget-panel">
+            <div class="widget-head">
+              <div>
+                <div class="eyebrow" data-t="quoteEyebrow">Quick Lookup</div>
+                <h3 data-t="quoteTitle">Quote Lookup</h3>
+              </div>
+            </div>
+            <div class="widget-search">
+              <input class="widget-input" id="detailLookup" placeholder="AAPL / TSLA / 0700.HK" />
+              <button class="btn primary" id="detailLookupBtn" data-t="goBtn">Go</button>
+            </div>
+          </section>
+
+          <section class="widget-card card widget-panel">
+            <div class="widget-head">
+              <div>
+                <div class="eyebrow" data-t="snapshotEyebrow">Current Snapshot</div>
+                <h3 data-t="snapshotTitle">Selected Ticker</h3>
+              </div>
+            </div>
+            <div class="mini-grid" id="currentSnapshot">
+              <div class="mini-card"><h4 id="snapshotName">-</h4><div class="widget-muted" id="snapshotMeta">-</div></div>
+            </div>
+          </section>
+
+          <section class="widget-card card widget-panel">
+            <div class="widget-head">
+              <div>
+                <div class="eyebrow" data-t="trendingEyebrow">Market Panel</div>
+                <h3 data-t="trendingTitle">Trending Tickers</h3>
+              </div>
+              <button class="btn secondary" id="refreshMarketBtn" data-t="refreshMarket">Refresh</button>
+            </div>
+            <div class="widget-list" id="trendingList"></div>
+            
+          </section>
+
+          <section class="widget-card card widget-panel">
+            <div class="widget-head">
+              <div>
+                <div class="eyebrow" data-t="moversEyebrow">Market Movers</div>
+                <h3 data-t="moversTitle">Top Gainers & Losers</h3>
+              </div>
+            </div>
+            <div class="mini-grid">
+              <div class="mini-card">
+                <h4 data-t="gainersTitle">Top Gainers</h4>
+                <div id="gainersList" class="widget-list"></div>
+              </div>
+              <div class="mini-card">
+                <h4 data-t="losersTitle">Top Losers</h4>
+                <div id="losersList" class="widget-list"></div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section class="page" id="pageNews">
+      <div class="watch-layout" style="margin-top:16px">
+        <aside class="watch-card card">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow" data-t="eyebrowWatch">Local Watchlist</div>
+              <h3 data-t="watchTitle">Saved Tickers</h3>
+              
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 100px;gap:10px;align-items:center;margin-bottom:12px">
+            <input id="watchTicker" />
+            <button class="btn secondary" id="addWatchBtn" data-t="addBtn">Add</button>
+          </div>
+          <div class="watch-list" id="watchList"></div>
+          
+        </aside>
+        <div class="stack">
+          <section class="news-card card">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow" data-t="eyebrowNews">News</div>
+                <h3 data-t="newsTitle">Related News</h3>
+                              </div>
+              <button class="btn secondary" id="refreshNewsBtn" data-t="refreshNews">Refresh News</button>
+            </div>
+            
+            <div class="news-list" id="newsList"><div class="empty" data-t="newsEmpty">Load a ticker to see related news.</div></div>
+          </section>
+          <section class="table-card card">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow" data-t="eyebrowSaved">Saved Packs</div>
+                <h3 data-t="savedTitle">Saved Analysis Packs</h3>
+                
+              </div>
+            </div>
+            
+            <div class="watch-list" id="savedPackList" style="margin-top:12px"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="pageBacktest">
+      <div class="backtest-page-grid">
+        <div class="stack">
+          <section class="card table-card">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow" data-t="backtestEyebrow">Strategy Validation</div>
+                <h3 data-t="backtestPageTitle">Backtest Dashboard</h3>
+                <div class="subtle" data-t="backtestPageDesc">Uses the latest 1-year real history with a simple MA5/MA20 + volume rule.</div>
+              </div>
+            </div>
+            <div class="backtest-grid" id="backtestStatsPage"></div>
+            <div class="backtest-note" id="backtestNotePage">-</div>
+          </section>
+          <section class="card chart-card">
+            <div class="chart-head">
+              <div>
+                <div class="eyebrow" data-t="equityEyebrow">Equity Curve</div>
+                <h3 data-t="equityTitle">Strategy vs Buy & Hold</h3>
+              </div>
+            </div>
+            <div class="equity-chart-box"><svg id="equityCurveSvg" viewBox="0 0 900 360" preserveAspectRatio="xMidYMid meet"></svg></div>
+            <div class="bt-legend"><span><span class="bt-dot" style="background:#38bdf8"></span><span data-t="strategyLine">Strategy</span></span><span><span class="bt-dot" style="background:#f59e0b"></span><span data-t="benchmarkLine">Buy & Hold</span></span><span><span class="bt-dot" style="background:#22c55e"></span>BUY</span><span><span class="bt-dot" style="background:#ef4444"></span>SELL</span></div>
+          </section>
+        </div>
+        <aside class="stack">
+          <section class="card table-card">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow" data-t="tradeLogEyebrow">Trade Log</div>
+                <h3 data-t="tradeLogTitle">Recent Closed Trades</h3>
+              </div>
+            </div>
+            <div class="trade-log" id="tradeLogList"></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <div class="chart-modal" id="chartModal" aria-hidden="true">
+    <div class="chart-modal-card">
+      <div class="chart-modal-head">
+        <div>
+          <div class="eyebrow" data-t="eyebrowChart">Large Chart</div>
+          <h3 id="chartModalTitle">Historical Trend</h3>
+          <div class="chart-modal-note" data-t="chartModalHint">Wheel to zoom, drag to pan, and use Reset to go back.</div>
+        </div>
+        <div class="chart-modal-tools">
+          <button class="chart-tool" id="modalZoomInBtn" data-t="zoomIn">Zoom +</button>
+          <button class="chart-tool" id="modalZoomOutBtn" data-t="zoomOut">Zoom −</button>
+          <button class="chart-tool" id="modalResetBtn" data-t="resetZoom">Reset</button>
+          <button class="chart-tool" id="chartCloseBtn" data-t="closeChart">Close</button>
+        </div>
+      </div>
+      <div class="chart-stage" id="chartStage">
+        <div class="chart-panzoom" id="chartPanzoom"><svg id="chartModalSvg" viewBox="0 0 1400 820" preserveAspectRatio="xMidYMid meet"></svg></div>
+        <div class="chart-tooltip" id="chartModalTooltip"></div>
+        <div class="chart-date-badge" id="chartModalDateBadge"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TEXT = {
+      en:{
+        eyebrowInput:'Quick Input', titleInput:'Enter a ticker to start analysis', descInput:'Keep the homepage clean: enter a stock code here, then open the full analysis page.', miniHint:'',
+        tickerLabel:'Ticker', startDateLabel:'Start Date', endDateLabel:'End Date', daysLabel:'Forecast Days', analyzeBtn:'Load Analysis', savePackBtn:'Save Pack', exportBtn:'Export JSON', loading:'Loading real historical data...',
+        eyebrowOverview:'Minimal Overview', eyebrowChart:'Large Chart', chartTitle:'Historical Trend', chartDesc:'', eyebrowCore:'Core Insight', coreTitle:'Key Factors', coreDesc:'', waiting:'Waiting for analysis',
+        eyebrowDetail:'Finance Detail', detailTitle:'Professional Data View', detailDesc:'',
+        sampleTitle:'Recent Sample Data', sampleDesc:'', dateCol:'Date', closeCol:'Close', analysisTitle:'Analysis', analysisDesc:'', forecastTitle:'Forecast View', predictedChange:'Predicted Change', predictedEnd:'Projected End Price', predictedRange:'Estimated Range', forecastSummaryLabel:'Forecast Summary', forecastVisualTitle:'Forecast Snapshot', fixedRangeLabel:'History Range', fixedRangeNote:'Fixed to the latest 1 year to keep the chart clear and consistent.', rangeHint:'The history window is fixed to the latest 1 year so the chart stays clean and easier to compare. Forecast days are capped at 30.', backtestTitle:'Backtest', backtestEyebrow:'Strategy Validation', backtestPageTitle:'Backtest Dashboard', backtestPageDesc:'Uses the latest 1-year real history with a simple MA5/MA20 + volume rule.', equityEyebrow:'Equity Curve', equityTitle:'Strategy vs Buy & Hold', strategyLine:'Strategy', benchmarkLine:'Buy & Hold', tradeLogEyebrow:'Trade Log', tradeLogTitle:'Recent Closed Trades', buyHoldReturn:'Buy & Hold', alphaReturn:'Alpha vs Buy & Hold', backtestReturn:'Strategy Return', backtestDrawdown:'Max Drawdown', backtestWinRate:'Win Rate', backtestTrades:'Trades', backtestNoteText:'This backtest applies a simple MA5/MA20 trend-following rule with volume confirmation to recent real history. It is for validation only, not live-trading advice.',
+        eyebrowWatch:'Local Watchlist', watchTitle:'Saved Tickers', watchDesc:'', addBtn:'Add', watchHint:'',
+        eyebrowNews:'News', newsTitle:'Related News', newsDesc:'', refreshNews:'Refresh News', newsRefreshing:'Refreshing...', newsRefreshed:'News refreshed.', newsNeedTicker:'Load a ticker first.', newsUpdated:'Updated at', newsFailed:'Refresh failed:', marketRefreshing:'Refreshing market panel...', marketUpdated:'Market panel updated at', marketFailed:'Market panel refresh failed:', newsEmpty:'Load a ticker to see related news.', eyebrowSaved:'Saved Packs', savedTitle:'Saved Analysis Packs', savedDesc:'', savedHint:'', saveDone:'Saved locally.', noSaved:'No saved analysis packs yet.', loadSaved:'Load', exportSaved:'Export', deleteSaved:'Delete',
+        tabMinimal:'Minimal Overview', tabDetail:'Finance Detail', tabNews:'News & Watchlist', tabBacktest:'Backtest',
+        source:'Source', confidence:'Confidence', lastTrade:'Last Trading Day', generated:'Generated', noData:'No data yet', exported:'JSON exported.', exists:'Already saved.', resultMissing:'No result to save yet.', savedExported:'Saved pack exported.',
+        themeLight:'🌙 Dark', themeDark:'☀️ Light', watchPlaceholder:'Add ticker e.g. TSLA', suggestEmpty:'No matching tickers.',
+        quoteEyebrow:'Quick Lookup', quoteTitle:'Quote Lookup', goBtn:'Go', snapshotEyebrow:'Current Snapshot', snapshotTitle:'Selected Ticker', trendingEyebrow:'Market Panel', trendingTitle:'Trending Tickers', refreshMarket:'Refresh', moversEyebrow:'Market Movers', moversTitle:'Top Gainers & Losers', gainersTitle:'Top Gainers', losersTitle:'Top Losers', expandChart:'Expand', zoomIn:'Zoom +', zoomOut:'Zoom −', resetZoom:'Reset', closeChart:'Close', chartHint:'Use mouse wheel or touchpad to zoom, drag to move, and use the chart toolbar to reset or expand.', chartModalHint:'Wheel to zoom, drag to pan, and use Reset to go back.', trendBias:'Trend Bias', backtestQuick:'Backtest Return', winRateQuick:'Win Rate', forecastQuick:'Forecast Change', rightSummary:'Quick Summary', chartDate:'Date', chartOpen:'Open', chartHigh:'High', chartLow:'Low', chartClose:'Close', chartVolume:'Volume',
+        metric:{start:'Start Price', end:'End Price', change:'Price Change (%)', avg:'Average Price'},
+        details:{'Start Price':'Start Price','End Price':'End Price','Average Price':'Average Price','Highest Price':'Highest Price','Lowest Price':'Lowest Price','Price Change (%)':'Price Change (%)','Total Data Days':'Total Data Days','Last Trading Day':'Last Trading Day'}
+      },
+      zh:{
+        eyebrowInput:'快速输入', titleInput:'输入股票代码开始分析', descInput:'首页保持简洁，只保留输入入口。先输入股票代码，再进入完整分析页面。', miniHint:'',
+        tickerLabel:'股票代码', startDateLabel:'开始日期', endDateLabel:'结束日期', daysLabel:'预测天数', analyzeBtn:'加载分析', savePackBtn:'保存结果包', exportBtn:'导出 JSON', loading:'正在加载真实历史数据...',
+        eyebrowOverview:'极简总览', eyebrowChart:'大图表', chartTitle:'历史走势', chartDesc:'', eyebrowCore:'核心摘要', coreTitle:'关键因素', coreDesc:'', waiting:'等待分析',
+        eyebrowDetail:'专业数据', detailTitle:'专业金融详情页', detailDesc:'',
+        sampleTitle:'近期样本数据', sampleDesc:'', dateCol:'日期', closeCol:'收盘价', analysisTitle:'分析', analysisDesc:'', forecastTitle:'预测观点', predictedChange:'预计涨跌幅', predictedEnd:'预计结束价格', predictedRange:'估计区间', forecastSummaryLabel:'预测摘要', forecastVisualTitle:'预测图示', fixedRangeLabel:'历史区间', fixedRangeNote:'已固定为最近 1 年，避免图表太乱、也更方便比较。', rangeHint:'历史区间固定为最近 1 年，这样图表更清楚也更容易比较；预测天数上限为 30 天。', backtestTitle:'历史回测', backtestEyebrow:'策略验证', backtestPageTitle:'回测面板', backtestPageDesc:'使用最近 1 年真实历史数据，并基于 MA5/MA20 + 成交量规则进行简单回测。', equityEyebrow:'资金曲线', equityTitle:'策略 vs 买入持有', strategyLine:'策略', benchmarkLine:'买入持有', tradeLogEyebrow:'交易记录', tradeLogTitle:'最近平仓交易', buyHoldReturn:'买入持有', alphaReturn:'相对超额', backtestReturn:'策略收益率', backtestDrawdown:'最大回撤', backtestWinRate:'胜率', backtestTrades:'交易次数', backtestNoteText:'该回测使用 MA5/MA20 趋势规则并结合成交量确认，在最近真实历史行情中模拟验证。结果仅供参考，不构成真实交易建议。',
+        eyebrowWatch:'本地观察名单', watchTitle:'已保存股票', watchDesc:'', addBtn:'添加', watchHint:'',
+        eyebrowNews:'新闻', newsTitle:'相关新闻', newsDesc:'', refreshNews:'刷新新闻', newsRefreshing:'刷新中...', newsRefreshed:'新闻已刷新。', newsNeedTicker:'请先加载股票。', newsUpdated:'更新时间', newsFailed:'刷新失败：', marketRefreshing:'正在刷新市场面板...', marketUpdated:'市场面板已更新：', marketFailed:'市场面板刷新失败：', newsEmpty:'加载股票后即可查看相关新闻。', eyebrowSaved:'已保存结果', savedTitle:'已保存分析结果包', savedDesc:'', savedHint:'', saveDone:'已保存到本地。', noSaved:'还没有保存任何结果包。', loadSaved:'加载', exportSaved:'导出', deleteSaved:'删除',
+        tabMinimal:'极简总览', tabDetail:'专业详细版', tabNews:'新闻与观察名单', tabBacktest:'回测',
+        source:'来源', confidence:'信心', lastTrade:'最后交易日', generated:'生成时间', noData:'暂无数据', exported:'JSON 已导出。', exists:'已存在于观察名单。', resultMissing:'还没有可保存的结果。', savedExported:'已导出保存包。',
+        themeLight:'🌙 深色', themeDark:'☀️ 浅色', watchPlaceholder:'添加股票代码，例如 TSLA', suggestEmpty:'没有匹配的股票代码。',
+        quoteEyebrow:'快速查询', quoteTitle:'快速查询', goBtn:'查询', snapshotEyebrow:'当前快照', snapshotTitle:'当前股票', trendingEyebrow:'市场面板', trendingTitle:'热门代码', refreshMarket:'刷新', moversEyebrow:'市场涨跌', moversTitle:'涨幅榜与跌幅榜', gainersTitle:'涨幅靠前', losersTitle:'跌幅靠前', expandChart:'放大图表', zoomIn:'放大 +', zoomOut:'缩小 −', resetZoom:'重置', closeChart:'关闭', chartHint:'可用鼠标滚轮或触控板缩放，拖拽移动，并用图表内工具栏重置或放大。', chartModalHint:'可用滚轮缩放、拖拽平移，并用重置按钮恢复。', trendBias:'趋势方向', backtestQuick:'回测收益率', winRateQuick:'胜率', forecastQuick:'预测涨跌幅', rightSummary:'右侧摘要', chartDate:'日期', chartOpen:'开盘', chartHigh:'最高', chartLow:'最低', chartClose:'收盘', chartVolume:'成交量',
+        metric:{start:'起始价', end:'终止价', change:'价格变动 (%)', avg:'平均价格'},
+        details:{'Start Price':'起始价','End Price':'终止价','Average Price':'平均价格','Highest Price':'最高价','Lowest Price':'最低价','Price Change (%)':'价格变动 (%)','Total Data Days':'数据天数','Last Trading Day':'最后交易日'}
+      }
+    };
+    const PRESETS={indigo:['#4f46e5','#8b5cf6'],sky:['#0284c7','#38bdf8'],emerald:['#059669','#10b981'],rose:['#e11d48','#fb7185'],amber:['#d97706','#f59e0b']};
+    const QUICK=['AAPL','MSFT','NVDA','TSLA','GOOGL','AMZN','META','0700.HK','9988.HK','600519.SS'];
+    const MARKET_DEFAULT=['AAPL','MSFT','NVDA','TSLA','GOOGL','AMZN'];
+    const state={lang:localStorage.getItem('cp3405_lang')||'en',theme:localStorage.getItem('cp3405_theme')||'light',accent:localStorage.getItem('cp3405_accent')||'indigo',latest:null,watch:JSON.parse(localStorage.getItem('cp3405_watch_v7')||'[]'),savedPacks:JSON.parse(localStorage.getItem('cp3405_saved_packs_v21')||'[]'),page:'minimal',market:[],newsRefreshSeq:0,newsPoolTotal:0,chartZoom:1,chartPanX:0,chartPanY:0,chartDrag:null,mainChartZoom:1,mainChartPanX:0,mainChartPanY:0,mainChartDrag:null};
+
+    const el=id=>document.getElementById(id);
+    function txt(k){return TEXT[state.lang][k]}
+    function setPage(page){state.page=page;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.page===page));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page'+page.charAt(0).toUpperCase()+page.slice(1)));}
+    function applyTheme(){document.body.classList.toggle('dark',state.theme==='dark');const[a,b]=PRESETS[state.accent]||PRESETS.indigo;document.documentElement.style.setProperty('--accent',a);document.documentElement.style.setProperty('--accent2',b);el('accentSelect').value=state.accent;el('themeBtn').textContent=state.theme==='dark'?txt('themeDark'):txt('themeLight');}
+    function syncDateBounds(){const today=new Date(); const end=today.toISOString().slice(0,10); const start=new Date(today); start.setFullYear(start.getFullYear()-1); const startStr=start.toISOString().slice(0,10); if(el('startDate')) el('startDate').value=startStr; if(el('endDate')) el('endDate').value=end; }
+    function setDefaults(){el('forecastDays').value='7'; syncDateBounds();}
+    function setError(msg,isErr=true){const box=el('errorBox');if(!msg){box.style.display='none';box.textContent='';return;}box.style.display='block';box.textContent=msg;box.style.color=isErr?'var(--danger)':'var(--ok)';}
+    function setLoading(on){el('loadingBox').style.display=on?'block':'none'}
+    function saveWatch(){localStorage.setItem('cp3405_watch_v7',JSON.stringify(state.watch))}
+    function saveSavedPacks(){localStorage.setItem('cp3405_saved_packs_v21',JSON.stringify(state.savedPacks))}
+    function buildPack(){if(!state.latest) return null; return {id:`${state.latest.ticker}_${Date.now()}`, saved_at:new Date().toISOString(), data:JSON.parse(JSON.stringify(state.latest))};}
+
+    function trendBiasLabel(metrics={}){const ch=Number(metrics.predicted_change_pct||0); if(ch>0.35) return state.lang==='zh'?'偏看涨':'Bullish'; if(ch<-0.35) return state.lang==='zh'?'偏看跌':'Bearish'; return state.lang==='zh'?'偏震荡':'Sideways';}
+    function renderCoreWidgets(data){const box=el('coreWidgetGrid'); const summary=el('coreSummaryBox'); if(!box||!summary){return;} if(!data){box.innerHTML=''; summary.textContent='-'; return;} const metrics=data.forecast_metrics||{}; const backtest=data.backtest||{}; const cards=[
+      [txt('trendBias'), trendBiasLabel(metrics), `${txt('confidence')}: ${data.confidence||'-'}`],
+      [txt('forecastQuick'), `${Number(metrics.predicted_change_pct||0)>=0?'+':''}${fmt(metrics.predicted_change_pct)}%`, `${txt('predictedEnd')}: ${fmt(metrics.predicted_end_price)}`],
+      [txt('backtestQuick'), `${Number(backtest.return_pct||0)>=0?'+':''}${fmt(backtest.return_pct)}%`, `${txt('backtestTrades')}: ${fmt(backtest.trades||0)}`],
+      [txt('winRateQuick'), `${fmt(backtest.win_rate_pct)}%`, `${txt('predictedRange')}: ${metrics.predicted_range_low!=null&&metrics.predicted_range_high!=null?`${fmt(metrics.predicted_range_low)} ~ ${fmt(metrics.predicted_range_high)}`:'-'}`]
+    ];
+      box.innerHTML=cards.map(([k,v,s])=>`<div class="core-widget-card"><div class="k">${k}</div><div class="v">${v||'-'}</div><div class="s">${s||''}</div></div>`).join('');
+      summary.innerHTML=''; summary.style.display='none';
+    }
+    function hideChartTooltip(which='main'){const tip=el(which==='modal'?'chartModalTooltip':'chartTooltip'); const svg=el(which==='modal'?'chartModalSvg':'chartSvg'); if(tip) tip.style.display='none'; if(svg) svg.querySelectorAll('.chart-crosshair').forEach(n=>n.style.display='none'); }
+    function showChartTooltip(which, payload, clientX, clientY){const tip=el(which==='modal'?'chartModalTooltip':'chartTooltip'); const stage=el(which==='modal'?'chartStage':'chartBox'); const svg=el(which==='modal'?'chartModalSvg':'chartSvg'); if(!tip||!stage||!svg) return; tip.innerHTML=`<strong>${payload.symbol||''} · ${payload.date||'-'}</strong><div><span class="muted">${txt('chartOpen')}:</span> ${fmt(Number(payload.open))}</div><div><span class="muted">${txt('chartHigh')}:</span> ${fmt(Number(payload.high))}</div><div><span class="muted">${txt('chartLow')}:</span> ${fmt(Number(payload.low))}</div><div><span class="muted">${txt('chartClose')}:</span> ${fmt(Number(payload.close))}</div><div><span class="muted">${txt('chartVolume')}:</span> ${Number(payload.volume||0).toLocaleString()}</div>`;
+      tip.style.display='block';
+      const rect=stage.getBoundingClientRect();
+      const tipRect=tip.getBoundingClientRect();
+      let left=clientX-rect.left+14, top=clientY-rect.top+14;
+      if(left+tipRect.width>rect.width-8) left=Math.max(8, clientX-rect.left-tipRect.width-14);
+      if(top+tipRect.height>rect.height-8) top=Math.max(8, clientY-rect.top-tipRect.height-14);
+      tip.style.left=`${left}px`; tip.style.top=`${top}px`;
+      const x=Number(payload.cx), y=Number(payload.cy);
+      svg.querySelectorAll('.chart-crosshair').forEach(n=>n.style.display='block');
+      const v=svg.querySelector('.chart-crosshair-v'); const h=svg.querySelector('.chart-crosshair-h');
+      if(v){v.setAttribute('x1',x); v.setAttribute('x2',x);} if(h){h.setAttribute('y1',y); h.setAttribute('y2',y);} }
+    function bindChartHover(svgId, stageId, which){const svg=el(svgId); const stage=el(stageId); if(!svg||!stage) return; svg.querySelectorAll('.candle-group').forEach(g=>{g.addEventListener('mouseenter',e=>showChartTooltip(which, g.dataset, e.clientX, e.clientY)); g.addEventListener('mousemove',e=>showChartTooltip(which, g.dataset, e.clientX, e.clientY)); g.addEventListener('mouseleave',()=>hideChartTooltip(which));}); stage.addEventListener('mouseleave',()=>hideChartTooltip(which)); }
+    function syncChartModal(){const src=el('chartSvg'); const dst=el('chartModalSvg'); if(src&&dst) dst.innerHTML=src.innerHTML; el('chartModalTitle').textContent=txt('chartTitle'); bindChartHover('chartModalSvg','chartStage','modal'); }
+    function applyChartTransform(){const pan=el('chartPanzoom'); if(!pan) return; pan.style.transform=`translate(${state.chartPanX}px, ${state.chartPanY}px) scale(${state.chartZoom})`;}
+    function resetChartZoom(){state.chartZoom=1; state.chartPanX=0; state.chartPanY=0; applyChartTransform();}
+    function openChartModal(){syncChartModal(); resetChartZoom(); el('chartModal')?.classList.add('active');}
+    function closeChartModal(){el('chartModal')?.classList.remove('active'); resetChartZoom();}
+    function stepChartZoom(delta){state.chartZoom=Math.max(1, Math.min(4, +(state.chartZoom+delta).toFixed(2))); applyChartTransform();}
+    function applyMainChartTransform(){const pan=el('chartPanzoomMain'); if(!pan) return; pan.style.transform=`translate(${state.mainChartPanX}px, ${state.mainChartPanY}px) scale(${state.mainChartZoom})`; const box=el('chartBox'); if(box) box.classList.toggle('dragging', !!state.mainChartDrag);}
+    function resetMainChartZoom(){state.mainChartZoom=1; state.mainChartPanX=0; state.mainChartPanY=0; applyMainChartTransform();}
+    function stepMainChartZoom(delta){state.mainChartZoom=Math.max(1, Math.min(5, +(state.mainChartZoom+delta).toFixed(2))); applyMainChartTransform();}
+    function bindMainChartPanzoom(){const stage=el('chartViewport'); const pan=el('chartPanzoomMain'); const box=el('chartBox'); if(!stage||!pan||!box) return; stage.addEventListener('wheel',(e)=>{e.preventDefault(); const old=state.mainChartZoom; const next=Math.max(1, Math.min(5, +(old + (e.deltaY<0?0.12:-0.12)).toFixed(2))); if(next===old) return; const rect=stage.getBoundingClientRect(); const cx=e.clientX-rect.left-rect.width/2; const cy=e.clientY-rect.top-rect.height/2; const ratio=next/old; state.mainChartPanX=(state.mainChartPanX-cx)*ratio+cx; state.mainChartPanY=(state.mainChartPanY-cy)*ratio+cy; state.mainChartZoom=next; applyMainChartTransform(); }, {passive:false});
+      pan.addEventListener('pointerdown',(e)=>{if(state.mainChartZoom<=1) return; state.mainChartDrag={x:e.clientX,y:e.clientY,startX:state.mainChartPanX,startY:state.mainChartPanY}; pan.classList.add('dragging'); pan.setPointerCapture(e.pointerId);});
+      pan.addEventListener('pointermove',(e)=>{if(!state.mainChartDrag) return; state.mainChartPanX=state.mainChartDrag.startX + (e.clientX-state.mainChartDrag.x); state.mainChartPanY=state.mainChartDrag.startY + (e.clientY-state.mainChartDrag.y); applyMainChartTransform();});
+      const endMainDrag=()=>{state.mainChartDrag=null; pan.classList.remove('dragging'); box.classList.remove('dragging');}; pan.addEventListener('pointerup',endMainDrag); pan.addEventListener('pointercancel',endMainDrag);
+    }
+    function bindChartPanzoom(){const stage=el('chartStage'); const pan=el('chartPanzoom'); if(!stage||!pan) return; stage.addEventListener('wheel',(e)=>{if(!el('chartModal')?.classList.contains('active')) return; e.preventDefault(); const old=state.chartZoom; const next=Math.max(1, Math.min(4, +(old + (e.deltaY<0?0.12:-0.12)).toFixed(2))); if(next===old) return; const rect=stage.getBoundingClientRect(); const cx=e.clientX-rect.left-rect.width/2; const cy=e.clientY-rect.top-rect.height/2; const ratio=next/old; state.chartPanX=(state.chartPanX-cx)*ratio+cx; state.chartPanY=(state.chartPanY-cy)*ratio+cy; state.chartZoom=next; applyChartTransform(); }, {passive:false});
+      pan.addEventListener('pointerdown',(e)=>{if(state.chartZoom<=1) return; state.chartDrag={x:e.clientX,y:e.clientY,startX:state.chartPanX,startY:state.chartPanY}; pan.classList.add('dragging'); pan.setPointerCapture(e.pointerId);});
+      pan.addEventListener('pointermove',(e)=>{if(!state.chartDrag) return; state.chartPanX=state.chartDrag.startX + (e.clientX-state.chartDrag.x); state.chartPanY=state.chartDrag.startY + (e.clientY-state.chartDrag.y); applyChartTransform();});
+      const endDrag=(e)=>{state.chartDrag=null; pan.classList.remove('dragging');}; pan.addEventListener('pointerup',endDrag); pan.addEventListener('pointercancel',endDrag);
+    }
+
+    function renderSavedPacks(){const box=el('savedPackList'); if(!box) return; box.innerHTML=''; if(!state.savedPacks.length){box.innerHTML=`<div class="empty">${txt('noSaved')}</div>`; return;} state.savedPacks.forEach((pack,idx)=>{const row=document.createElement('div'); row.className='watch-item'; const info=document.createElement('div'); const d=pack.data||{}; info.innerHTML=`<div><strong>${d.ticker||'-'}</strong> · ${(d.stock_name||'').replace(/</g,'')}</div><div class="small">${(pack.saved_at||'').replace('T',' ').slice(0,19)} · ${d.news?.length||0} news · ${Object.keys(d.model_parameters||{}).length} params</div>`; row.appendChild(info); const load=document.createElement('button'); load.textContent=txt('loadSaved'); load.style.fontSize='12px'; load.style.color='var(--text)'; load.onclick=(e)=>{e.stopPropagation(); renderResult(JSON.parse(JSON.stringify(pack.data))); setPage('detail');}; const exp=document.createElement('button'); exp.textContent=txt('exportSaved'); exp.style.fontSize='12px'; exp.style.color='var(--text)'; exp.onclick=(e)=>{e.stopPropagation(); exportPack(pack);}; const del=document.createElement('button'); del.textContent='×'; del.title=txt('deleteSaved'); del.onclick=(e)=>{e.stopPropagation(); state.savedPacks.splice(idx,1); saveSavedPacks(); renderSavedPacks();}; row.appendChild(load); row.appendChild(exp); row.appendChild(del); box.appendChild(row);});}
+    function savePack(){const pack=buildPack(); if(!pack) return setError(txt('resultMissing')); state.savedPacks.unshift(pack); state.savedPacks=state.savedPacks.slice(0,20); saveSavedPacks(); renderSavedPacks(); setError(txt('saveDone'), false);}
+    function exportPack(pack){const blob=new Blob([JSON.stringify(pack.data||pack,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); const name=(pack.data?.ticker||'stock')+'_saved_pack_v21.json'; a.download=name; a.click(); URL.revokeObjectURL(a.href); setError(txt('savedExported'), false);}
+    function renderQuick(){const box=el('quickRow');box.innerHTML='';QUICK.forEach(t=>{const b=document.createElement('button');b.className='chip-btn';b.textContent=t;b.onclick=()=>{el('ticker').value=t;analyze();};box.appendChild(b);});}
+    function renderWatch(){const box=el('watchList');box.innerHTML='';if(!state.watch.length){box.innerHTML=`<div class="empty">${state.lang==='zh'?'还没有保存任何股票。':'No saved tickers yet.'}</div>`;return;}state.watch.forEach((t,idx)=>{const row=document.createElement('div');row.className='watch-item';row.innerHTML=`<span>${t}</span>`;row.onclick=()=>{el('ticker').value=t;setPage('minimal');analyze();};const rm=document.createElement('button');rm.textContent='×';rm.onclick=(e)=>{e.stopPropagation();state.watch.splice(idx,1);saveWatch();renderWatch();};row.appendChild(rm);box.appendChild(row);});}
+    function addWatch(){const t=(el('watchTicker').value||'').trim().toUpperCase();if(!t)return;if(state.watch.includes(t)){setError(txt('exists'));return;}state.watch.unshift(t);state.watch=state.watch.slice(0,18);saveWatch();renderWatch();el('watchTicker').value='';setError('',false);}
+    function fmt(v){return typeof v==='number'?v.toFixed(2):(v??'-')}
+    function ma(points,w=5){const out=[];for(let i=0;i<points.length;i++){const start=Math.max(0,i-w+1);const slice=points.slice(start,i+1);const s=slice.reduce((a,p)=>a+Number(p.close),0)/Math.max(1,slice.length);out.push({date:points[i].date,close:s});}return out;}
+    
+    function renderBacktest(backtest={}){const boxes=[el('backtestStats'),el('backtestStatsPage')].filter(Boolean); const notes=[el('backtestNote'),el('backtestNotePage')].filter(Boolean); const rows=[
+        [txt('backtestReturn'), Number(backtest.return_pct||0), '%', Number(backtest.return_pct||0)>=0],
+        [txt('backtestDrawdown'), Number(backtest.max_drawdown_pct||0), '%', false],
+        [txt('backtestWinRate'), Number(backtest.win_rate_pct||0), '%', Number(backtest.win_rate_pct||0)>=50],
+        [txt('backtestTrades'), Number(backtest.trades||0), '', true],
+        [txt('buyHoldReturn'), Number(backtest.buy_hold_return_pct||0), '%', Number(backtest.buy_hold_return_pct||0)>=0],
+        [txt('alphaReturn'), Number(backtest.alpha_vs_buy_hold_pct||0), '%', Number(backtest.alpha_vs_buy_hold_pct||0)>=0],
+      ];
+      boxes.forEach(box=>box.innerHTML=rows.map(([k,v,s,pos])=>`<div class="backtest-card"><div class="k">${k}</div><div class="v" style="color:${k===txt('backtestDrawdown')?'var(--danger)':(pos?'var(--ok)':'var(--text)')}">${Number.isFinite(v)?fmt(v):'-'}${s}</div></div>`).join(''));
+      notes.forEach(note=>note.textContent=backtest.note || txt('backtestNoteText'));
+      renderEquityCurve(backtest.equity_curve||[]);
+      renderTradeLog(backtest.trade_log||[]);
+    }
+    function renderTradeLog(trades=[]){const box=el('tradeLogList'); if(!box) return; if(!trades.length){box.innerHTML=`<div class="empty">${txt('noData')}</div>`; return;} box.innerHTML=trades.slice().reverse().map(t=>`<div class="trade-row"><strong>${t.entry_date||'-'} → ${t.exit_date||'-'}</strong><div>${fmt(Number(t.entry_price||0))} → ${fmt(Number(t.exit_price||0))}</div><div class="${Number(t.return_pct||0)>=0?'chg-up':'chg-down'}">${Number(t.return_pct||0)>=0?'+':''}${fmt(Number(t.return_pct||0))}%</div></div>`).join('');}
+    function renderEquityCurve(curve=[]){const svg=el('equityCurveSvg'); if(!svg) return; const w=900,h=360,p={l:58,r:24,t:18,b:34}; if(!Array.isArray(curve)||!curve.length){svg.innerHTML=`<text x="50%" y="50%" text-anchor="middle" class="axis-label">${txt('noData')}</text>`; return;} const strategy=curve.map(pt=>Number(pt.equity)).filter(v=>Number.isFinite(v)); const benchmark=curve.map((pt,i)=>{const base=Number(curve[0]?.close||1); const price=Number(pt.close||base); return base? price/base : 1;}); const vals=strategy.concat(benchmark).filter(v=>Number.isFinite(v)); let min=Math.min(...vals), max=Math.max(...vals); if(min===max){min-=0.05; max+=0.05;} const pad=(max-min)*0.1; min-=pad; max+=pad; const innerW=w-p.l-p.r, innerH=h-p.t-p.b; const x=i=>p.l + i*(innerW/Math.max(1,curve.length-1)); const y=v=>p.t + (max-v)*(innerH/((max-min)||1)); let grid=''; for(let i=0;i<5;i++){const yy=p.t+i*(innerH/4); const val=(max-i*(max-min)/4); grid+=`<line class="grid-line" x1="${p.l}" y1="${yy}" x2="${w-p.r}" y2="${yy}" /><text class="axis-label" x="10" y="${yy+4}">${((val-1)*100).toFixed(1)}%</text>`;} const monthMarks=[]; let last=''; curve.forEach((pt,i)=>{const m=String(pt.date||'').slice(0,7); if(m!==last){monthMarks.push(i); last=m;}}); monthMarks.forEach(i=>{grid+=`<text class="axis-label" x="${x(i)-12}" y="${h-10}">${String(curve[i].date||'').slice(5,7)}/${String(curve[i].date||'').slice(8,10)}</text>`}); const d1=curve.map((pt,i)=>`${i?'L':'M'} ${x(i)} ${y(Number(pt.equity))}`).join(' '); const d2=benchmark.map((v,i)=>`${i?'L':'M'} ${x(i)} ${y(Number(v))}`).join(' '); const marks=(curve.filter(pt=>pt.action==='BUY' || pt.action==='SELL').map(pt=>{const i=curve.indexOf(pt); return `<circle class="${pt.action==='BUY'?'eq-buy':'eq-sell'}" cx="${x(i)}" cy="${y(Number(pt.equity))}" r="4.5" />`;}).join('')); svg.innerHTML=`${grid}<path class="eq-benchmark" d="${d2}" /><path class="eq-line" d="${d1}" />${marks}`; }
+
+    function drawChart(points, forecastPoints=[]){
+      const svg=el('chartSvg');svg.innerHTML='';
+      if(!points||!points.length){svg.innerHTML=`<text x="50%" y="50%" text-anchor="middle" fill="#94a3b8">${txt('noData')}</text>`;return;}
+      const width=1400,height=820,p={l:82,r:28,t:24,b:34};
+      const priceH=535, volTop=600, volH=150;
+      const candles=points.map(pt=>({date:pt.date,open:Number(pt.open??pt.close),high:Number(pt.high??pt.close),low:Number(pt.low??pt.close),close:Number(pt.close),volume:Number(pt.volume||0)})).filter(pt=>Number.isFinite(pt.close));
+      const ma20=ma(candles,20);
+      const priceVals=candles.flatMap(c=>[c.high,c.low,c.open,c.close]).concat(ma20.map(x=>Number(x.close)));
+      let min=Math.min(...priceVals),max=Math.max(...priceVals); if(min===max){min-=1;max+=1;}
+      const pad=(max-min)*0.08; min-=pad; max+=pad;
+      const totalCount=candles.length;
+      const step=(width-p.l-p.r)/Math.max(1,totalCount);
+      const candleW=Math.max(4, Math.min(14, step*0.66));
+      const x=i=>p.l + step*i + step/2;
+      const y=v=>p.t + (max-v)*((priceH-p.t)/(max-min));
+      const maxVol=Math.max(...candles.map(c=>c.volume||0),1);
+      const volY=v=>volTop + (1-(v/maxVol))*volH;
+      for(let i=0;i<5;i++){const yy=p.t+i*((priceH-p.t)/4);const val=(max-i*(max-min)/4).toFixed(2);svg.insertAdjacentHTML('beforeend',`<line class="grid-line" x1="${p.l}" y1="${yy}" x2="${width-p.r}" y2="${yy}"/><text class="axis-label" x="10" y="${yy+4}">${val}</text>`);}
+      svg.insertAdjacentHTML('beforeend',`<line class="grid-line" x1="${p.l}" y1="${volTop}" x2="${width-p.r}" y2="${volTop}"/>`);
+      const monthIdx=[]; let lastM=''; candles.forEach((c,i)=>{const m=c.date.slice(0,7); if(m!==lastM){monthIdx.push(i); lastM=m;}});
+      monthIdx.forEach(i=>{const xx=x(i); svg.insertAdjacentHTML('beforeend',`<line class="grid-line" x1="${xx}" y1="${p.t}" x2="${xx}" y2="${volTop+volH}"/><text class="axis-label" x="${xx-16}" y="${height-8}">${candles[i].date.slice(5,7)}/${candles[i].date.slice(8,10)}</text>`);});
+      candles.forEach((c,i)=>{const xx=x(i)-candleW/2; const yy=volY(c.volume||0); const hh=volTop+volH-yy; const cls=c.close>=c.open?'volume-up':'volume-down'; svg.insertAdjacentHTML('beforeend',`<rect class="${cls}" x="${xx}" y="${yy}" width="${candleW}" height="${Math.max(1,hh)}" rx="1"/>`);});
+      candles.forEach((c,i)=>{const xx=x(i); const openY=y(c.open), closeY=y(c.close), highY=y(c.high), lowY=y(c.low); const up=c.close>=c.open; const rectY=Math.min(openY,closeY); const rectH=Math.max(2,Math.abs(closeY-openY)); const hitY=Math.min(highY, lowY); const hitH=Math.max(14, Math.abs(lowY-highY)); svg.insertAdjacentHTML('beforeend',`<g class="candle-group" data-symbol="${(el('ticker')?.value||'').toUpperCase()}" data-date="${c.date}" data-open="${c.open}" data-high="${c.high}" data-low="${c.low}" data-close="${c.close}" data-volume="${c.volume}" data-cx="${xx}" data-cy="${closeY}"><rect x="${xx-step/2}" y="${hitY}" width="${Math.max(step,14)}" height="${hitH}" fill="transparent"></rect><line class="${up?'candle-wick-up':'candle-wick-down'}" x1="${xx}" y1="${highY}" x2="${xx}" y2="${lowY}"/><rect class="${up?'candle-up':'candle-down'}" x="${xx-candleW/2}" y="${rectY}" width="${candleW}" height="${rectH}" rx="1"/></g>`);});
+      if(ma20.length){const d=ma20.map((pt,i)=>`${i===0?'M':'L'} ${x(i)} ${y(Number(pt.close))}`).join(' '); svg.insertAdjacentHTML('beforeend',`<path class="line-main" d="${d}"/>`);}
+      svg.insertAdjacentHTML('beforeend',`<line class="chart-crosshair chart-crosshair-v" x1="${p.l}" y1="${p.t}" x2="${p.l}" y2="${volTop+volH}"/><line class="chart-crosshair chart-crosshair-h" x1="${p.l}" y1="${p.t}" x2="${width-p.r}" y2="${p.t}"/><g><rect x="${width-200}" y="18" width="12" height="12" rx="2" class="candle-up"></rect><text class="axis-label" x="${width-182}" y="28">Candle</text><line class="line-main" x1="${width-120}" y1="24" x2="${width-88}" y2="24"></line><text class="axis-label" x="${width-80}" y="28">MA20</text></g>`);
+      bindChartHover('chartSvg','chartBox','main');
+    }
+
+    async function loadSuggestions(query){
+      const box=el('tickerSuggest');
+      if(!box) return;
+      const q=(query||'').trim();
+      if(!q){box.classList.remove('active'); box.innerHTML=''; return;}
+      try{
+        const res=await fetch('/api/suggest?q='+encodeURIComponent(q),{cache:'no-store'});
+        const data=await res.json();
+        const items=(data.items||[]);
+        if(!items.length){box.innerHTML=`<div class="suggest-item"><span class="suggest-symbol">—</span><span class="suggest-name">${txt('suggestEmpty')}</span></div>`; box.classList.add('active'); return;}
+        box.innerHTML=items.map(it=>`<div class="suggest-item" data-symbol="${it.symbol}"><span class="suggest-symbol">${it.symbol}</span><span class="suggest-name">${it.name||''}</span></div>`).join('');
+        box.classList.add('active');
+        box.querySelectorAll('.suggest-item[data-symbol]').forEach(item=>item.addEventListener('click',()=>{el('ticker').value=item.dataset.symbol; box.classList.remove('active'); analyze();}));
+      }catch(e){box.classList.remove('active');}
+    }
+
+function renderForecastStats(metrics={}){const box=el('forecastStats');if(!box)return;const items=[[txt('predictedChange'), metrics.predicted_change_pct],[txt('predictedEnd'), metrics.predicted_end_price],[txt('predictedRange'), metrics.predicted_range_low!=null&&metrics.predicted_range_high!=null?`${fmt(metrics.predicted_range_low)} ~ ${fmt(metrics.predicted_range_high)}`:'-']];box.innerHTML=items.map((it,idx)=>`<div class="forecast-stat"><div class="k">${it[0]}</div><div class="v">${idx===0&&typeof it[1]==='number'?`${it[1]>=0?'+':''}${fmt(it[1])}%`:it[1]??'-'}</div></div>`).join('');}
+    function drawForecastPreview(points=[], metrics={}){const svg=el('forecastPreviewSvg'); if(!svg) return; const w=760,h=220,pad={l:28,r:22,t:18,b:28}; if(!Array.isArray(points)||!points.length){svg.innerHTML=`<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" class="forecast-axis">${txt('noData')}</text>`; return;} const vals=points.map(p=>Number(p.close)).filter(v=>Number.isFinite(v)); const low=Number(metrics.predicted_range_low); const high=Number(metrics.predicted_range_high); if(Number.isFinite(low)) vals.push(low); if(Number.isFinite(high)) vals.push(high); const min=Math.min(...vals), max=Math.max(...vals); const safeMin=min-(max-min||1)*0.08, safeMax=max+(max-min||1)*0.08; const innerW=w-pad.l-pad.r, innerH=h-pad.t-pad.b; const x=i=>pad.l+i*(innerW/Math.max(1,points.length-1)); const y=v=>pad.t+(safeMax-v)*(innerH/((safeMax-safeMin)||1)); let grid=''; for(let i=0;i<4;i++){const gy=pad.t+i*(innerH/3); grid+=`<line class="forecast-bg-grid" x1="${pad.l}" y1="${gy}" x2="${w-pad.r}" y2="${gy}" />`; } let band=''; if(Number.isFinite(low)&&Number.isFinite(high)){const yTop=y(high), yBot=y(low); band=`<rect class="forecast-band" x="${pad.l}" y="${Math.min(yTop,yBot)}" width="${innerW}" height="${Math.abs(yBot-yTop)}" rx="14" />`; } const d=points.map((p,i)=>`${i?'L':'M'} ${x(i)} ${y(Number(p.close))}`).join(' '); const start=points[0], end=points[points.length-1]; const endText=Number(metrics.predicted_end_price); const change=Number(metrics.predicted_change_pct); const endLabel=Number.isFinite(endText)?fmt(endText):fmt(Number(end.close)); const chLabel=Number.isFinite(change)?`${change>=0?'+':''}${fmt(change)}%`:'-'; const pillW=118,pillH=42,pillX=Math.max(pad.l, Math.min(w-pad.r-pillW, x(points.length-1)-pillW-8)), pillY=pad.t+4; const startDate=String(start.date||'').slice(5); const endDate=String(end.date||'').slice(5); svg.innerHTML=`${grid}${band}<path class="forecast-mini-line" d="${d}" /><circle class="forecast-mini-start" cx="${x(0)}" cy="${y(Number(start.close))}" r="4" /><circle class="forecast-mini-end" cx="${x(points.length-1)}" cy="${y(Number(end.close))}" r="5" /><text class="forecast-axis" x="${pad.l}" y="${h-8}">${startDate}</text><text class="forecast-axis" x="${w-pad.r}" y="${h-8}" text-anchor="end">${endDate}</text><text class="forecast-axis" x="${pad.l}" y="${pad.t-4}">${fmt(safeMax)}</text><text class="forecast-axis" x="${pad.l}" y="${h-10-pad.b}">${fmt(safeMin)}</text><rect class="forecast-pill" x="${pillX}" y="${pillY}" rx="14" ry="14" width="${pillW}" height="${pillH}"/><text class="forecast-tag" x="${pillX+12}" y="${pillY+17}">${txt('predictedEnd')}: ${endLabel}</text><text class="forecast-tag" x="${pillX+12}" y="${pillY+33}">${txt('predictedChange')}: ${chLabel}</text>`;}
+
+    function renderMetrics(sum={}){const box=el('metricsBox');const T=TEXT[state.lang].metric;const items=[[T.start,sum['Start Price']],[T.end,sum['End Price']],[T.change,sum['Price Change (%)']],[T.avg,sum['Average Price']]];box.innerHTML=items.map((it,idx)=>`<div class="metric"><div class="k">${it[0]}</div><div class="v">${fmt(it[1])}${idx===2&&typeof it[1]==='number'?'%':''}</div><div class="s">${idx===3&&sum['Total Data Days']?`${state.lang==='zh'?'数据天数':'Data Days'}: ${sum['Total Data Days']}`:'&nbsp;'}</div></div>`).join('');}
+    function renderSummaryTable(sum={}){const rows=Object.entries(sum).map(([k,v])=>`<tr><th>${TEXT[state.lang].details[k]||k}</th><td>${fmt(v)}</td></tr>`).join('');el('summaryTable').innerHTML=rows||`<tr><td colspan="2">${txt('noData')}</td></tr>`;}
+    function renderSample(sample=[]){el('sampleTable').innerHTML=sample.length?sample.map(r=>`<tr><td>${r.date}</td><td>${fmt(r.close)}</td></tr>`).join(''):`<tr><td colspan="2">${txt('noData')}</td></tr>`;}
+    function nowTime(){return new Date().toLocaleTimeString(state.lang==='zh' ? 'zh-CN' : 'en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+    function setNewsStatus(msg,type=''){return;}
+    function setMarketStatus(msg,type=''){return;}
+    function renderNews(items=[]){el('newsList').innerHTML=items.length?items.map(n=>`<a class="news-item" href="${n.link}" target="_blank" rel="noopener noreferrer"><strong>${n.title}</strong><div class="news-meta">${[n.source,n.published].filter(Boolean).join(' · ')}</div></a>`).join(''):`<div class="empty">${txt('newsEmpty')}</div>`;}
+    function sparkSvg(points=[], positive=true){let vals=(Array.isArray(points)?points:[]).map(Number).filter(v=>Number.isFinite(v));if(vals.length<2){vals=[15,16,14,18,17,19,18,20,21,19,22];}const w=72,h=18,max=Math.max(...vals),min=Math.min(...vals);const x=i=>i*(w/Math.max(1,vals.length-1));const y=v=>2+(max-v)*((h-4)/(max-min||1));const d=vals.map((v,i)=>`${i?'L':'M'} ${x(i)} ${y(v)}`).join(' ');const color=positive?'#34d399':'#fb7185';return `<svg class="spark" viewBox="0 0 72 18"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/></svg>`;}
+    function renderSnapshot(){if(!state.latest){el('snapshotName').textContent='-';el('snapshotMeta').textContent='-';return;}const sum=state.latest.historical_data_summary||{};const ch=Number(sum['Price Change (%)']||0);el('snapshotName').textContent=`${state.latest.stock_name} (${state.latest.ticker})`;el('snapshotMeta').textContent=`${fmt(sum['End Price'])} · ${ch>=0?'+':''}${fmt(ch)}% · ${state.latest.last_trading_day||'-'}`;}
+    function renderMarket(items){state.market=items||[];const list=el('trendingList');if(!items.length){list.innerHTML=`<div class="empty">-</div>`;el('gainersList').innerHTML='';el('losersList').innerHTML='';setMarketStatus('', '');return;}
+      list.innerHTML=items.map((it,idx)=>`<div class="ticker-row" data-symbol="${it.symbol}"><div class="ticker-main"><div class="ticker-symbol">${it.symbol}</div><div class="ticker-name">${it.name||it.symbol}</div></div><div style="display:flex;gap:10px;align-items:center"><div>${sparkSvg(it.spark,it.change_pct>=0)}</div><div class="ticker-price"><div>${fmt(it.price)}</div><div class="${it.change_pct>=0?'chg-up':'chg-down'}">${it.change_pct>=0?'+':''}${fmt(it.change_pct)}% <span style="font-size:11px;opacity:.75">${it.change_basis||'1D'}</span></div></div></div></div>`).join('');
+      list.querySelectorAll('.ticker-row').forEach(row=>row.addEventListener('click',()=>{el('ticker').value=row.dataset.symbol; analyze();}));
+      const gainers=[...items].sort((a,b)=>b.change_pct-a.change_pct).slice(0,3);
+      const losers=[...items].sort((a,b)=>a.change_pct-b.change_pct).slice(0,3);
+      const mk=(it)=>`<div class="ticker-row" data-symbol="${it.symbol}"><div class="ticker-main"><div class="ticker-symbol">${it.symbol}</div><div class="ticker-name">${it.name||it.symbol}</div></div><div class="ticker-price ${it.change_pct>=0?'chg-up':'chg-down'}">${it.change_pct>=0?'+':''}${fmt(it.change_pct)}%</div></div>`;
+      el('gainersList').innerHTML=gainers.map(mk).join('');
+      el('losersList').innerHTML=losers.map(mk).join('');
+      document.querySelectorAll('#gainersList .ticker-row,#losersList .ticker-row').forEach(row=>row.addEventListener('click',()=>{el('ticker').value=row.dataset.symbol; analyze();}));
+    }
+    function renderResult(data){
+      state.latest=data; state.newsRefreshSeq=0; state.newsPoolTotal=(data.news||[]).length; setNewsStatus('', ''); if(el('heroName')) el('heroName').textContent=`${data.stock_name} (${data.ticker})`; if(el('heroMeta')) el('heroMeta').textContent=`${data.date_range} · ${data.forecast_days}-day forecast · ${txt('generated')}: ${data.generated_at}`; if(el('sourceBadge')) el('sourceBadge').textContent=`${txt('source')}: ${data.source}`; if(el('confBadge')) el('confBadge').textContent=`${txt('confidence')}: ${data.confidence}`; if(el('tradeBadge')) el('tradeBadge').textContent=`${txt('lastTrade')}: ${data.last_trading_day||'-'}`;renderMetrics(data.historical_data_summary||{});drawChart(data.chart_points||[], data.forecast_points||[]); resetMainChartZoom(); renderCoreWidgets(data); syncChartModal(); el('factorsList').innerHTML=(data.key_factors||[]).map(x=>`<li>${x}</li>`).join('')||`<li>${txt('waiting')}</li>`;el('analysisText').textContent=data.analysis||'-';el('forecastText').textContent=data.forecast||'-';renderForecastStats(data.forecast_metrics||{});drawForecastPreview(data.forecast_points||[], data.forecast_metrics||{});renderBacktest(data.backtest||{}); if(el('startDate')&&data.start_date_used) el('startDate').value=data.start_date_used; if(el('endDate')&&data.end_date_used) el('endDate').value=data.end_date_used; syncDateBounds();renderSummaryTable(data.historical_data_summary||{});renderSample(data.raw_data_sample||[]);renderNews(data.news||[]);renderSnapshot(); if(state.page==='minimal'){ setPage('detail'); }}
+    async function analyze(refetch=false){syncDateBounds();const payload={ticker:(el('ticker').value||'').trim(),start_date:(el('startDate')?.value||''),end_date:(el('endDate')?.value||''),forecast_days:Math.max(1, Math.min(30, Number(el('forecastDays').value||7))),lang:state.lang}; el('forecastDays').value=String(payload.forecast_days);if(!payload.ticker)return setError(state.lang==='zh'?'请输入股票代码。':'Enter a ticker.');setLoading(true);if(!refetch)setError('');try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'});const data=await res.json();if(!res.ok||data.status!=='ok')throw new Error(data.message||'Request failed');renderResult(data);loadMarket(false);}catch(err){setError(String(err.message||err));}finally{setLoading(false);}}
+    async function refreshNews(){if(!state.latest){setNewsStatus(txt('newsNeedTicker'),'err'); return setError(txt('newsNeedTicker'));}const btn=el('refreshNewsBtn');btn.disabled=true;btn.textContent=txt('newsRefreshing');setNewsStatus(txt('newsRefreshing'));try{const nextSeq=(state.newsRefreshSeq||0)+1;const q=new URLSearchParams({ticker:state.latest.ticker,stock_name:state.latest.stock_name,lang:state.lang,refresh_seq:String(nextSeq),_:Date.now()});const res=await fetch('/api/news?'+q.toString(),{cache:'no-store'});const data=await res.json();if(!res.ok||data.status!=='ok') throw new Error(data.message||'News refresh failed');renderNews(data.items||[]);if(state.latest) state.latest.news=data.items||[];state.newsRefreshSeq=nextSeq;state.newsPoolTotal=Number(data.pool_total||data.items?.length||0);const slice=data.slice_label?` · ${data.slice_label}`:'';setNewsStatus(`${txt('newsUpdated')} ${nowTime()} · ${data.items?.length||0} items${slice}`,'ok');setError(txt('newsRefreshed'),false);}catch(e){const msg=String(e.message||e);setNewsStatus(`${txt('newsFailed')} ${msg}`,'err');setError(msg);}finally{btn.disabled=false;btn.textContent=txt('refreshNews');}}
+    async function loadMarket(force=true){const btn=el('refreshMarketBtn');if(btn){btn.disabled=true;btn.textContent=txt('marketRefreshing');}setMarketStatus(txt('marketRefreshing'));try{const symbols=MARKET_DEFAULT.join(',');const res=await fetch('/api/market?symbols='+encodeURIComponent(symbols),{cache:'no-store'});const data=await res.json();if(res.ok&&data.status==='ok'){renderMarket(data.items||[]);setMarketStatus(`${txt('marketUpdated')} ${nowTime()}`,'ok');}else{throw new Error(data.message||'Market refresh failed');}}catch(e){const msg=String(e.message||e);if(force){renderMarket([]);}setMarketStatus(`${txt('marketFailed')} ${msg}`,'err');}finally{if(btn){btn.disabled=false;btn.textContent=txt('refreshMarket');}}}
+    function exportJson(){if(!state.latest)return setError(state.lang==='zh'?'还没有可导出的结果。':'No result to export yet.');const blob=new Blob([JSON.stringify(state.latest,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${state.latest.ticker||'stock'}_analysis_v21.json`;a.click();URL.revokeObjectURL(a.href);setError(txt('exported'),false);}
+    function applyText(){document.querySelectorAll('[data-t]').forEach(node=>{const k=node.dataset.t;if(TEXT[state.lang][k])node.textContent=TEXT[state.lang][k];});el('langBtn').textContent=state.lang==='en'?'中文':'English'; if(el('watchTicker')) el('watchTicker').placeholder=txt('watchPlaceholder'); if(el('detailLookup')) el('detailLookup').placeholder='AAPL / TSLA / 0700.HK';el('tabMinimal').textContent=txt('tabMinimal');el('tabDetail').textContent=txt('tabDetail');el('tabNews').textContent=txt('tabNews');el('tabBacktest').textContent=txt('tabBacktest');if(el('chartModalTitle')) el('chartModalTitle').textContent=txt('chartTitle');applyTheme();renderQuick();renderWatch();renderSavedPacks();renderSnapshot();if(state.latest){analyze(true);}else{renderMetrics({});renderSummaryTable({});renderSample([]);renderNews([]);drawChart([]);renderCoreWidgets(null); renderForecastStats({});drawForecastPreview([], {});renderBacktest({}); if(el('factorsList')) el('factorsList').innerHTML=`<li>${txt('waiting')}</li>`; if(el('coreSummaryBox')) el('coreSummaryBox').style.display='none'; setNewsStatus('', '');}if(state.market.length){renderMarket(state.market);} else { setMarketStatus('', ''); }}
+    document.addEventListener('DOMContentLoaded',()=>{
+      const on=(id,event,handler)=>{const node=el(id); if(node) node.addEventListener(event,handler);};
+      setDefaults();
+      applyText();
+      loadMarket(false);
+      document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));
+      on('analyzeBtn','click',()=>analyze(false));
+      on('ticker','input',e=>loadSuggestions(e.target.value));
+      on('ticker','focus',e=>loadSuggestions(e.target.value));
+      on('ticker','keydown',e=>{if(e.key==='Enter'){el('tickerSuggest')?.classList.remove('active'); analyze(false);}});
+      document.addEventListener('click',e=>{const wrap=document.querySelector('.suggest-wrap'); if(wrap && !wrap.contains(e.target)){el('tickerSuggest')?.classList.remove('active');}});
+      on('savePackBtn','click',savePack);
+      on('exportBtn','click',exportJson);
+      on('refreshNewsBtn','click',refreshNews);
+      on('refreshMarketBtn','click',()=>loadMarket(true));
+      on('detailLookupBtn','click',()=>{const t=(el('detailLookup')?.value||'').trim();if(t){el('ticker').value=t.toUpperCase(); analyze();}});
+      on('addWatchBtn','click',addWatch);
+      on('chartExpandBtn','click',openChartModal);
+      on('chartExpandBtn2','click',openChartModal);
+      on('chartCloseBtn','click',closeChartModal);
+      on('chartModal','click',(e)=>{if(e.target.id==='chartModal') closeChartModal();});
+      on('chartZoomInBtn','click',()=>stepMainChartZoom(.3));
+      on('chartZoomOutBtn','click',()=>stepMainChartZoom(-.3));
+      on('chartResetBtn','click',resetMainChartZoom);
+      on('chartZoomInBtn2','click',()=>stepMainChartZoom(.3));
+      on('chartZoomOutBtn2','click',()=>stepMainChartZoom(-.3));
+      on('chartResetBtn2','click',resetMainChartZoom);
+      on('modalZoomInBtn','click',()=>stepChartZoom(.3));
+      on('modalZoomOutBtn','click',()=>stepChartZoom(-.3));
+      on('modalResetBtn','click',resetChartZoom);
+      bindChartPanzoom();
+      bindMainChartPanzoom();
+      renderSavedPacks();
+      on('langBtn','click',()=>{state.lang=state.lang==='en'?'zh':'en';localStorage.setItem('cp3405_lang',state.lang);applyText();});
+      on('themeBtn','click',()=>{state.theme=state.theme==='light'?'dark':'light';localStorage.setItem('cp3405_theme',state.theme);applyTheme();});
+      on('accentSelect','change',e=>{state.accent=e.target.value;localStorage.setItem('cp3405_accent',state.accent);applyTheme();});
+    });
+  </script>
+</body>
+</html>
