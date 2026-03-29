@@ -1002,8 +1002,11 @@ def main() -> None:
                 if s.connect_ex(("127.0.0.1", candidate)) != 0:
                     port = candidate
                     break
-
+    print("DEBUG is_render =", is_render)
+    print("DEBUG host =", host)
+    print("DEBUG port =", port)
     server = ThreadingHTTPServer((host, port), AppHandler)
+    print("DEBUG server created successfully")
 
     if not is_render:
         threading.Timer(
@@ -1013,9 +1016,10 @@ def main() -> None:
         print(f"Server running at http://127.0.0.1:{port}")
         print("Keep this terminal open while the web app is running.")
     else:
-        print(f"Server running on Render at 0.0.0.0:{port}")
+     print(f"Server running on Render at 0.0.0.0:{port}")
 
-    server.serve_forever()
+print("DEBUG entering serve_forever()")
+server.serve_forever()
 
 
 if __name__ == "__main__":
