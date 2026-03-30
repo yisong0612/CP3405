@@ -175,22 +175,44 @@
       .landing-panel{padding:24px}
       .landing-panel .input-grid{grid-template-columns:1fr 180px;width:100%;}
       .landing-panel .btn.primary{width:100%}
+      .backtest-page-grid{grid-template-columns:1fr}
     }
     @media (max-width:760px){
       .landing-wrap{padding:14px}
-      .landing-panel{padding:18px}
+      .landing-panel{padding:18px 16px}
       .landing-panel .title{font-size:28px}
       .landing-panel .desc{font-size:15px}
-      .landing-panel .input-grid{grid-template-columns:1fr;width:100%;}
-      .landing-actions .btn{width:100%}
+      .landing-panel .input-grid{grid-template-columns:1fr;width:100%;gap:12px}
+      .landing-panel #ticker,.landing-panel #forecastDays{min-height:64px;padding:14px 16px;font-size:24px;border-radius:18px}
+      .landing-panel #analyzeBtn{min-height:58px;font-size:17px;border-radius:16px}
+      .landing-actions{width:100%;gap:10px}
+      .landing-actions .btn{width:100%;min-height:50px;font-size:16px}
+      .quick-row,.status-row{width:100%}
+      .topbar{flex-direction:column;align-items:stretch;padding:12px;gap:12px}
+      .brand-row{flex-direction:column;align-items:stretch;gap:12px}
+      .logo{height:56px;width:56px;font-size:28px;border-radius:18px}
+      .tabbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+      .tab{width:100%;height:auto;min-height:48px;padding:12px 14px;white-space:normal;text-align:center}
+      .tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+      .tool{width:100%;min-width:0;flex:none;height:auto;min-height:46px;padding:10px 12px}
+      .tool.compact{width:100%}
+      .chart-modal{padding:10px}
+      .chart-modal-card{width:100%;height:92vh;border-radius:20px}
+      .chart-modal-head{flex-direction:column;align-items:stretch}
+      .chart-modal-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+      .chart-tool{width:100%;min-height:42px}
     }
 
     @media (max-width:1240px){
       .input-grid{grid-template-columns:1fr 1fr 1fr;}.btn{width:100%}.tool.compact{width:auto}
-      .metrics{grid-template-columns:repeat(2,1fr)}.main-grid,.detail-grid,.watch-layout{grid-template-columns:1fr}.chart-box{height:520px}
+      .metrics{grid-template-columns:repeat(2,1fr)}.main-grid,.detail-grid,.watch-layout,.backtest-page-grid{grid-template-columns:1fr}.chart-box{height:520px}
     }
     @media (max-width:760px){
-      .shell{padding:14px}.topbar{padding:12px}.tabbar{width:100%}.hero-name{font-size:24px}.metrics{grid-template-columns:1fr}.chart-box{height:360px}.input-grid{grid-template-columns:1fr}.tools{width:100%}.tool{flex:1}.forecast-stats{grid-template-columns:1fr}.backtest-grid{grid-template-columns:1fr}
+      .shell{padding:14px}.hero-name{font-size:24px}.metrics{grid-template-columns:1fr}.chart-box{height:360px}.input-grid{grid-template-columns:1fr}.forecast-stats{grid-template-columns:1fr}.backtest-grid{grid-template-columns:1fr}
+      .watch-card .section-head,.news-card .section-head,.table-card .section-head,.widget-head,.hero-head,.input-head{gap:10px}
+      .watch-card div[style*="grid-template-columns:1fr 100px"]{grid-template-columns:1fr}
+      .trade-log{max-height:none}
+      .equity-chart-box{height:280px}
     }
   </style>
 </head>
