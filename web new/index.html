@@ -86,7 +86,6 @@
     .stack{display:grid;gap:16px}
     .table-wrap table{width:100%;border-collapse:collapse}.table-wrap th,.table-wrap td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}.table-wrap th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
     .news-list{display:grid;gap:12px}.news-item{display:block;text-decoration:none;color:inherit;padding:14px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--accent) 4%, var(--card2))}.news-item strong{display:block;line-height:1.45;margin-bottom:6px}.news-meta{font-size:12px;color:var(--muted)}
-    .ai-chat-shell{display:grid;gap:12px}.ai-chat-box{min-height:320px;max-height:520px;overflow:auto;display:grid;gap:10px;padding:6px 2px}.ai-msg{max-width:88%;padding:12px 14px;border-radius:18px;line-height:1.6;white-space:pre-wrap;word-break:break-word;border:1px solid var(--line)}.ai-msg.user{justify-self:end;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 18%, var(--card2)),var(--card2));border-bottom-right-radius:8px}.ai-msg.assistant{justify-self:start;background:var(--card2);border-bottom-left-radius:8px}.ai-msg .role{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase}.ai-empty{padding:16px;border-radius:18px;border:1px dashed var(--line);background:color-mix(in srgb,var(--accent) 4%, var(--card2));color:var(--muted);line-height:1.7}.ai-controls{display:grid;gap:10px}.ai-textarea{width:100%;min-height:108px;resize:vertical;padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:var(--card2);color:var(--text);font:inherit;outline:none}.ai-actions{display:flex;gap:10px;flex-wrap:wrap}.ai-prompt-row{display:flex;gap:10px;flex-wrap:wrap}.ai-chip{border:none;cursor:pointer;padding:10px 12px;border-radius:999px;background:color-mix(in srgb,var(--accent) 9%, var(--card2));color:var(--text);font-weight:700}.ai-status{font-size:12px;color:var(--muted);min-height:18px}
     .watch-layout{display:grid;grid-template-columns:330px 1fr;gap:16px}.watch-list{display:grid;gap:10px}.watch-item{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card2);cursor:pointer}.watch-item button{margin-left:auto;border:none;background:transparent;color:var(--danger);font-size:18px;cursor:pointer}
     .empty{padding:22px 14px;border-radius:16px;border:1px dashed var(--line);text-align:center;color:var(--muted);background:color-mix(in srgb,var(--accent) 3%, var(--card2))}
     .small{display:none}
@@ -152,6 +151,22 @@
     .chart-modal-note{font-size:12px;color:var(--muted)}
 
 
+
+    .ai-page-grid{display:grid;grid-template-columns:minmax(0,1.55fr) 340px;gap:16px;margin-top:16px}
+    .ai-chat-card,.ai-side-card{padding:18px}
+    .ai-chip-row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 16px}
+    .ai-chip{padding:10px 16px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--text);font-weight:800;cursor:pointer}
+    .ai-chat-thread{display:grid;gap:14px;min-height:280px;max-height:520px;overflow:auto;padding-right:4px}
+    .ai-msg{max-width:min(88%,760px);padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:var(--card2);line-height:1.7;white-space:pre-wrap;word-break:break-word}
+    .ai-msg.user{margin-left:auto;background:color-mix(in srgb,var(--accent) 10%, var(--card2))}
+    .ai-msg.assistant{margin-right:auto}
+    .ai-msg-role{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+    .ai-composer{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-top:16px}
+    .ai-textarea{min-height:110px;resize:vertical;padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:var(--card2);color:var(--text);font:inherit;outline:none}
+    .ai-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+    @media (max-width:1240px){.ai-page-grid{grid-template-columns:1fr}}
+    @media (max-width:760px){.ai-composer{grid-template-columns:1fr}.ai-msg{max-width:100%}}
+
     .landing-page{margin-top:16px}
     .landing-wrap{min-height:calc(100vh - 150px);display:flex;align-items:center;justify-content:center;padding:32px}
     .landing-left{display:none}
@@ -203,6 +218,7 @@
         <div class="tabbar">
           <button class="tab active" data-page="minimal" id="tabMinimal">Minimal Overview</button>
           <button class="tab" data-page="detail" id="tabDetail">Finance Detail</button>
+          <button class="tab" data-page="ai" id="tabAi">AI Insights</button>
           <button class="tab" data-page="news" id="tabNews">News & Watchlist</button>
           <button class="tab" data-page="backtest" id="tabBacktest">Backtest</button>
         </div>
@@ -419,6 +435,53 @@
       </div>
     </section>
 
+
+
+    <section class="page" id="pageAi">
+      <div class="ai-page-grid">
+        <section class="card ai-chat-card">
+          <div class="ai-actions">
+            <div>
+              <div class="eyebrow" data-t="aiEyebrow">AI Assistant</div>
+              <h3 data-t="aiTitle">Stock AI Assistant</h3>
+            </div>
+            <button class="btn secondary" id="aiClearBtn" data-t="aiClear">Clear Chat</button>
+          </div>
+          <div class="ai-chip-row">
+            <button class="ai-chip" data-ai-prompt="summary" data-t="aiPromptSummary">Summarize this stock</button>
+            <button class="ai-chip" data-ai-prompt="risk" data-t="aiPromptRisk">What are the main risks?</button>
+            <button class="ai-chip" data-ai-prompt="news" data-t="aiPromptNews">Explain the latest news</button>
+          </div>
+          <div class="ai-chat-thread" id="aiChatThread"></div>
+          <div class="ai-composer">
+            <textarea class="ai-textarea" id="aiInput" placeholder="Ask something about this stock, chart, backtest, or news..."></textarea>
+            <button class="btn primary" id="aiSendBtn" data-t="aiSend">Send</button>
+          </div>
+        </section>
+        <aside class="stack">
+          <section class="card ai-side-card">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow" data-t="eyebrowCore">Core Insight</div>
+                <h3 data-t="coreTitle">Key Factors</h3>
+              </div>
+            </div>
+            <div class="note" id="aiCoreSummary">-</div>
+            <ul class="factor-list" id="aiFactorsList"><li>-</li></ul>
+          </section>
+          <section class="card ai-side-card">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow" data-t="eyebrowSaved">Saved Packs</div>
+                <h3 data-t="savedTitle">Saved Analysis Packs</h3>
+              </div>
+            </div>
+            <div class="watch-list" id="aiSavedPackList"></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+
     <section class="page" id="pageNews">
       <div class="watch-layout" style="margin-top:16px">
         <aside class="watch-card card">
@@ -437,33 +500,7 @@
           
         </aside>
         <div class="stack">
-                    <section class="table-card card">
-            <div class="section-head">
-              <div>
-                <div class="eyebrow" data-t="eyebrowAI">AI Assistant</div>
-                <h3 data-t="aiTitle">Stock AI Assistant</h3>
-              </div>
-              <button class="btn secondary" id="aiClearBtn" data-t="aiClear">Clear Chat</button>
-            </div>
-            <div class="ai-chat-shell">
-              <div class="ai-prompt-row">
-                <button class="ai-chip" id="aiPromptSummary" data-t="aiUseSummary">Summarize this stock</button>
-                <button class="ai-chip" id="aiPromptRisk" data-t="aiUseRisk">What are the main risks?</button>
-                <button class="ai-chip" id="aiPromptNews" data-t="aiUseNews">Explain the latest news</button>
-              </div>
-              <div class="ai-chat-box" id="aiChatBox">
-                <div class="ai-empty" id="aiEmpty" data-t="aiEmpty">Load a ticker, then ask the AI assistant about the chart, forecast, backtest, or news.</div>
-              </div>
-              <div class="ai-status" id="aiStatus"></div>
-              <div class="ai-controls">
-                <textarea class="ai-textarea" id="aiInput" data-t-placeholder="aiPlaceholder" placeholder="Ask something about this stock..."></textarea>
-                <div class="ai-actions">
-                  <button class="btn primary" id="aiSendBtn" data-t="aiSend">Send</button>
-                </div>
-              </div>
-            </div>
-          </section>
-<section class="news-card card">
+          <section class="news-card card">
             <div class="section-head">
               <div>
                 <div class="eyebrow" data-t="eyebrowNews">News</div>
@@ -474,17 +511,7 @@
             
             <div class="news-list" id="newsList"><div class="empty" data-t="newsEmpty">Load a ticker to see related news.</div></div>
           </section>
-          <section class="table-card card">
-            <div class="section-head">
-              <div>
-                <div class="eyebrow" data-t="eyebrowSaved">Saved Packs</div>
-                <h3 data-t="savedTitle">Saved Analysis Packs</h3>
-                
-              </div>
-            </div>
-            
-            <div class="watch-list" id="savedPackList" style="margin-top:12px"></div>
-          </section>
+
         </div>
       </div>
     </section>
@@ -559,11 +586,10 @@
         tickerLabel:'Ticker', startDateLabel:'Start Date', endDateLabel:'End Date', daysLabel:'Forecast Days', analyzeBtn:'Load Analysis', savePackBtn:'Save Pack', exportBtn:'Export JSON', loading:'Loading real historical data...',
         eyebrowOverview:'Minimal Overview', eyebrowChart:'Large Chart', chartTitle:'Historical Trend', chartDesc:'', eyebrowCore:'Core Insight', coreTitle:'Key Factors', coreDesc:'', waiting:'Waiting for analysis',
         eyebrowDetail:'Finance Detail', detailTitle:'Professional Data View', detailDesc:'',
-        sampleTitle:'Recent Sample Data', sampleDesc:'', dateCol:'Date', closeCol:'Close', analysisTitle:'Analysis', analysisDesc:'', forecastTitle:'Forecast View', predictedChange:'Predicted Change', predictedEnd:'Projected End Price', predictedRange:'Estimated Range', upProb:'Upside Probability', modelName:'Model', forecastSummaryLabel:'Forecast Summary', forecastVisualTitle:'Forecast Snapshot', fixedRangeLabel:'History Range', fixedRangeNote:'Fixed to the latest 1 year to keep the chart clear and consistent.', rangeHint:'The history window is fixed to the latest 1 year so the chart stays clean and easier to compare. Forecast days are capped at 30.', backtestTitle:'Backtest', backtestEyebrow:'Strategy Validation', backtestPageTitle:'Backtest Dashboard', backtestPageDesc:'Uses the latest 1-year real history with a simple MA5/MA20 + volume rule.', equityEyebrow:'Equity Curve', equityTitle:'Strategy vs Buy & Hold', strategyLine:'Strategy', benchmarkLine:'Buy & Hold', tradeLogEyebrow:'Trade Log', tradeLogTitle:'Recent Closed Trades', buyHoldReturn:'Buy & Hold', alphaReturn:'Alpha vs Buy & Hold', backtestReturn:'Strategy Return', backtestDrawdown:'Max Drawdown', backtestWinRate:'Win Rate', backtestTrades:'Trades', backtestNoteText:'This backtest applies a simple MA5/MA20 trend-following rule with volume confirmation to recent real history. It is for validation only, not live-trading advice.',
+        sampleTitle:'Recent Sample Data', sampleDesc:'', dateCol:'Date', closeCol:'Close', analysisTitle:'Analysis', analysisDesc:'', forecastTitle:'Forecast View', predictedChange:'Predicted Change', predictedEnd:'Projected End Price', predictedRange:'Estimated Range', forecastSummaryLabel:'Forecast Summary', forecastVisualTitle:'Forecast Snapshot', fixedRangeLabel:'History Range', fixedRangeNote:'Fixed to the latest 1 year to keep the chart clear and consistent.', rangeHint:'The history window is fixed to the latest 1 year so the chart stays clean and easier to compare. Forecast days are capped at 30.', backtestTitle:'Backtest', backtestEyebrow:'Strategy Validation', backtestPageTitle:'Backtest Dashboard', backtestPageDesc:'Uses the latest 1-year real history with a simple MA5/MA20 + volume rule.', equityEyebrow:'Equity Curve', equityTitle:'Strategy vs Buy & Hold', strategyLine:'Strategy', benchmarkLine:'Buy & Hold', tradeLogEyebrow:'Trade Log', tradeLogTitle:'Recent Closed Trades', buyHoldReturn:'Buy & Hold', alphaReturn:'Alpha vs Buy & Hold', backtestReturn:'Strategy Return', backtestDrawdown:'Max Drawdown', backtestWinRate:'Win Rate', backtestTrades:'Trades', backtestNoteText:'This backtest applies a simple MA5/MA20 trend-following rule with volume confirmation to recent real history. It is for validation only, not live-trading advice.',
         eyebrowWatch:'Local Watchlist', watchTitle:'Saved Tickers', watchDesc:'', addBtn:'Add', watchHint:'',
-        eyebrowAI:'AI Assistant', aiTitle:'Stock AI Assistant', aiPlaceholder:'Ask something about this stock, chart, backtest, or news...', aiSend:'Send', aiClear:'Clear Chat', aiEmpty:'Load a ticker, then ask the AI assistant about the chart, forecast, backtest, or news.', aiThinking:'AI is thinking...', aiReady:'Ready', aiUseSummary:'Summarize this stock', aiUseRisk:'What are the main risks?', aiUseNews:'Explain the latest news',
         eyebrowNews:'News', newsTitle:'Related News', newsDesc:'', refreshNews:'Refresh News', newsRefreshing:'Refreshing...', newsRefreshed:'News refreshed.', newsNeedTicker:'Load a ticker first.', newsUpdated:'Updated at', newsFailed:'Refresh failed:', marketRefreshing:'Refreshing market panel...', marketUpdated:'Market panel updated at', marketFailed:'Market panel refresh failed:', newsEmpty:'Load a ticker to see related news.', eyebrowSaved:'Saved Packs', savedTitle:'Saved Analysis Packs', savedDesc:'', savedHint:'', saveDone:'Saved locally.', noSaved:'No saved analysis packs yet.', loadSaved:'Load', exportSaved:'Export', deleteSaved:'Delete',
-        tabMinimal:'Minimal Overview', tabDetail:'Finance Detail', tabNews:'News & Watchlist', tabBacktest:'Backtest',
+        tabMinimal:'Minimal Overview', tabDetail:'Finance Detail', tabAi:'AI Insights', tabNews:'News & Watchlist', tabBacktest:'Backtest', aiEyebrow:'AI Assistant', aiTitle:'Stock AI Assistant', aiClear:'Clear Chat', aiPromptSummary:'Summarize this stock', aiPromptRisk:'What are the main risks?', aiPromptNews:'Explain the latest news', aiSend:'Send', aiPlaceholder:'Ask something about this stock, chart, backtest, or news...',
         source:'Source', confidence:'Confidence', lastTrade:'Last Trading Day', generated:'Generated', noData:'No data yet', exported:'JSON exported.', exists:'Already saved.', resultMissing:'No result to save yet.', savedExported:'Saved pack exported.',
         themeLight:'🌙 Dark', themeDark:'☀️ Light', watchPlaceholder:'Add ticker e.g. TSLA', suggestEmpty:'No matching tickers.',
         quoteEyebrow:'Quick Lookup', quoteTitle:'Quote Lookup', goBtn:'Go', snapshotEyebrow:'Current Snapshot', snapshotTitle:'Selected Ticker', trendingEyebrow:'Market Panel', trendingTitle:'Trending Tickers', refreshMarket:'Refresh', moversEyebrow:'Market Movers', moversTitle:'Top Gainers & Losers', gainersTitle:'Top Gainers', losersTitle:'Top Losers', expandChart:'Expand', zoomIn:'Zoom +', zoomOut:'Zoom −', resetZoom:'Reset', closeChart:'Close', chartHint:'Use mouse wheel or touchpad to zoom, drag to move, and use the chart toolbar to reset or expand.', chartModalHint:'Wheel to zoom, drag to pan, and use Reset to go back.', trendBias:'Trend Bias', backtestQuick:'Backtest Return', winRateQuick:'Win Rate', forecastQuick:'Forecast Change', rightSummary:'Quick Summary', chartDate:'Date', chartOpen:'Open', chartHigh:'High', chartLow:'Low', chartClose:'Close', chartVolume:'Volume',
@@ -577,9 +603,8 @@
         eyebrowDetail:'专业数据', detailTitle:'专业金融详情页', detailDesc:'',
         sampleTitle:'近期样本数据', sampleDesc:'', dateCol:'日期', closeCol:'收盘价', analysisTitle:'分析', analysisDesc:'', forecastTitle:'预测观点', predictedChange:'预计涨跌幅', predictedEnd:'预计结束价格', predictedRange:'估计区间', forecastSummaryLabel:'预测摘要', forecastVisualTitle:'预测图示', fixedRangeLabel:'历史区间', fixedRangeNote:'已固定为最近 1 年，避免图表太乱、也更方便比较。', rangeHint:'历史区间固定为最近 1 年，这样图表更清楚也更容易比较；预测天数上限为 30 天。', backtestTitle:'历史回测', backtestEyebrow:'策略验证', backtestPageTitle:'回测面板', backtestPageDesc:'使用最近 1 年真实历史数据，并基于 MA5/MA20 + 成交量规则进行简单回测。', equityEyebrow:'资金曲线', equityTitle:'策略 vs 买入持有', strategyLine:'策略', benchmarkLine:'买入持有', tradeLogEyebrow:'交易记录', tradeLogTitle:'最近平仓交易', buyHoldReturn:'买入持有', alphaReturn:'相对超额', backtestReturn:'策略收益率', backtestDrawdown:'最大回撤', backtestWinRate:'胜率', backtestTrades:'交易次数', backtestNoteText:'该回测使用 MA5/MA20 趋势规则并结合成交量确认，在最近真实历史行情中模拟验证。结果仅供参考，不构成真实交易建议。',
         eyebrowWatch:'本地观察名单', watchTitle:'已保存股票', watchDesc:'', addBtn:'添加', watchHint:'',
-        eyebrowAI:'AI 助手', aiTitle:'股票 AI 助手', aiPlaceholder:'可以问这只股票、图表、回测或新闻相关的问题...', aiSend:'发送', aiClear:'清空对话', aiEmpty:'先加载股票，再向 AI 助手提问图表、预测、回测或新闻。', aiThinking:'AI 正在思考...', aiReady:'已就绪', aiUseSummary:'总结这只股票', aiUseRisk:'这只股票的主要风险是什么？', aiUseNews:'解释最新新闻',
         eyebrowNews:'新闻', newsTitle:'相关新闻', newsDesc:'', refreshNews:'刷新新闻', newsRefreshing:'刷新中...', newsRefreshed:'新闻已刷新。', newsNeedTicker:'请先加载股票。', newsUpdated:'更新时间', newsFailed:'刷新失败：', marketRefreshing:'正在刷新市场面板...', marketUpdated:'市场面板已更新：', marketFailed:'市场面板刷新失败：', newsEmpty:'加载股票后即可查看相关新闻。', eyebrowSaved:'已保存结果', savedTitle:'已保存分析结果包', savedDesc:'', savedHint:'', saveDone:'已保存到本地。', noSaved:'还没有保存任何结果包。', loadSaved:'加载', exportSaved:'导出', deleteSaved:'删除',
-        tabMinimal:'极简总览', tabDetail:'专业详细版', tabNews:'新闻与观察名单', tabBacktest:'回测',
+        tabMinimal:'极简总览', tabDetail:'专业详细版', tabAi:'AI 智能助手', tabNews:'新闻与观察名单', tabBacktest:'回测', aiEyebrow:'AI 助手', aiTitle:'股票 AI 助手', aiClear:'清空对话', aiPromptSummary:'总结这只股票', aiPromptRisk:'主要风险是什么？', aiPromptNews:'解释最新新闻', aiSend:'发送', aiPlaceholder:'可以问这只股票、图表、回测或新闻相关问题…',
         source:'来源', confidence:'信心', lastTrade:'最后交易日', generated:'生成时间', noData:'暂无数据', exported:'JSON 已导出。', exists:'已存在于观察名单。', resultMissing:'还没有可保存的结果。', savedExported:'已导出保存包。',
         themeLight:'🌙 深色', themeDark:'☀️ 浅色', watchPlaceholder:'添加股票代码，例如 TSLA', suggestEmpty:'没有匹配的股票代码。',
         quoteEyebrow:'快速查询', quoteTitle:'快速查询', goBtn:'查询', snapshotEyebrow:'当前快照', snapshotTitle:'当前股票', trendingEyebrow:'市场面板', trendingTitle:'热门代码', refreshMarket:'刷新', moversEyebrow:'市场涨跌', moversTitle:'涨幅榜与跌幅榜', gainersTitle:'涨幅靠前', losersTitle:'跌幅靠前', expandChart:'放大图表', zoomIn:'放大 +', zoomOut:'缩小 −', resetZoom:'重置', closeChart:'关闭', chartHint:'可用鼠标滚轮或触控板缩放，拖拽移动，并用图表内工具栏重置或放大。', chartModalHint:'可用滚轮缩放、拖拽平移，并用重置按钮恢复。', trendBias:'趋势方向', backtestQuick:'回测收益率', winRateQuick:'胜率', forecastQuick:'预测涨跌幅', rightSummary:'右侧摘要', chartDate:'日期', chartOpen:'开盘', chartHigh:'最高', chartLow:'最低', chartClose:'收盘', chartVolume:'成交量',
@@ -590,7 +615,7 @@
     const PRESETS={indigo:['#4f46e5','#8b5cf6'],sky:['#0284c7','#38bdf8'],emerald:['#059669','#10b981'],rose:['#e11d48','#fb7185'],amber:['#d97706','#f59e0b']};
     const QUICK=['AAPL','MSFT','NVDA','TSLA','GOOGL','AMZN','META','0700.HK','9988.HK','600519.SS'];
     const MARKET_DEFAULT=['AAPL','MSFT','NVDA','TSLA','GOOGL','AMZN'];
-    const state={lang:localStorage.getItem('cp3405_lang')||'en',theme:localStorage.getItem('cp3405_theme')||'light',accent:localStorage.getItem('cp3405_accent')||'indigo',latest:null,watch:JSON.parse(localStorage.getItem('cp3405_watch_v7')||'[]'),savedPacks:JSON.parse(localStorage.getItem('cp3405_saved_packs_v21')||'[]'),chatHistory:JSON.parse(localStorage.getItem('cp3405_ai_chat_v1')||'[]'),page:'minimal',market:[],newsRefreshSeq:0,newsPoolTotal:0,chartZoom:1,chartPanX:0,chartPanY:0,chartDrag:null,mainChartZoom:1,mainChartPanX:0,mainChartPanY:0,mainChartDrag:null};
+    const state={lang:localStorage.getItem('cp3405_lang')||'en',theme:localStorage.getItem('cp3405_theme')||'light',accent:localStorage.getItem('cp3405_accent')||'indigo',latest:null,watch:JSON.parse(localStorage.getItem('cp3405_watch_v7')||'[]'),savedPacks:JSON.parse(localStorage.getItem('cp3405_saved_packs_v21')||'[]'),page:'minimal',market:[],newsRefreshSeq:0,newsPoolTotal:0,chartZoom:1,chartPanX:0,chartPanY:0,chartDrag:null,mainChartZoom:1,mainChartPanX:0,mainChartPanY:0,mainChartDrag:null,aiChat:[]};
 
     const el=id=>document.getElementById(id);
     function txt(k){return TEXT[state.lang][k]}
@@ -608,7 +633,6 @@
     function renderCoreWidgets(data){const box=el('coreWidgetGrid'); const summary=el('coreSummaryBox'); if(!box||!summary){return;} if(!data){box.innerHTML=''; summary.textContent='-'; return;} const metrics=data.forecast_metrics||{}; const backtest=data.backtest||{}; const cards=[
       [txt('trendBias'), trendBiasLabel(metrics), `${txt('confidence')}: ${data.confidence||'-'}`],
       [txt('forecastQuick'), `${Number(metrics.predicted_change_pct||0)>=0?'+':''}${fmt(metrics.predicted_change_pct)}%`, `${txt('predictedEnd')}: ${fmt(metrics.predicted_end_price)}`],
-      [txt('modelName'), data.forecast_model||'Smart Pattern Model', typeof metrics.up_probability==='number'?`${txt('upProb')}: ${(metrics.up_probability*100).toFixed(1)}%`:'' ],
       [txt('backtestQuick'), `${Number(backtest.return_pct||0)>=0?'+':''}${fmt(backtest.return_pct)}%`, `${txt('backtestTrades')}: ${fmt(backtest.trades||0)}`],
       [txt('winRateQuick'), `${fmt(backtest.win_rate_pct)}%`, `${txt('predictedRange')}: ${metrics.predicted_range_low!=null&&metrics.predicted_range_high!=null?`${fmt(metrics.predicted_range_low)} ~ ${fmt(metrics.predicted_range_high)}`:'-'}`]
     ];
@@ -649,15 +673,28 @@
       const endDrag=(e)=>{state.chartDrag=null; pan.classList.remove('dragging');}; pan.addEventListener('pointerup',endDrag); pan.addEventListener('pointercancel',endDrag);
     }
 
-    function saveChatHistory(){localStorage.setItem('cp3405_ai_chat_v1', JSON.stringify(state.chatHistory.slice(-20)));}
-    function setAiStatus(msg=''){const node=el('aiStatus'); if(node) node.textContent=msg || ''; }
-    function escapeHtml(s=''){return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-    function renderChat(){const box=el('aiChatBox'); if(!box) return; if(!state.chatHistory.length){box.innerHTML=`<div class="ai-empty" id="aiEmpty">${txt('aiEmpty')}</div>`; return;} box.innerHTML=state.chatHistory.map(m=>`<div class="ai-msg ${m.role==='user'?'user':'assistant'}"><span class="role">${m.role==='user'?'You':'AI'}</span>${escapeHtml(m.content)}</div>`).join(''); box.scrollTop=box.scrollHeight;}
-    function clearChat(){state.chatHistory=[]; saveChatHistory(); renderChat(); setAiStatus('');}
-    function buildChatContext(){if(!state.latest) return {}; const d=state.latest||{}; return {ticker:d.ticker, stock_name:d.stock_name, date_range:d.date_range, source:d.source, confidence:d.confidence, analysis:d.analysis, forecast:d.forecast, forecast_summary:d.forecast_summary, forecast_metrics:d.forecast_metrics, key_factors:d.key_factors, historical_data_summary:d.historical_data_summary, backtest:d.backtest, news:(d.news||[]).slice(0,5)};}
-    async function sendAiMessage(prefill=''){const input=el('aiInput'); if(!input) return; const raw=(prefill || input.value || '').trim(); if(!raw) return; state.chatHistory.push({role:'user', content:raw}); if(!prefill) input.value=''; renderChat(); setAiStatus(txt('aiThinking')); const payload={lang:state.lang, messages:state.chatHistory.slice(-10), context:buildChatContext()}; try{const res=await fetch('/api/llm-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'}); const data=await res.json(); if(!res.ok||data.status!=='ok') throw new Error(data.message||'AI chat failed'); state.chatHistory.push({role:'assistant', content:data.reply||'-'}); state.chatHistory=state.chatHistory.slice(-20); saveChatHistory(); renderChat(); setAiStatus(`${txt('aiReady')} · ${data.model||''}`.trim());}catch(err){state.chatHistory.push({role:'assistant', content:String(err.message||err)}); saveChatHistory(); renderChat(); setAiStatus(''); setError(String(err.message||err));}}
-
-    function renderSavedPacks(){const box=el('savedPackList'); if(!box) return; box.innerHTML=''; if(!state.savedPacks.length){box.innerHTML=`<div class="empty">${txt('noSaved')}</div>`; return;} state.savedPacks.forEach((pack,idx)=>{const row=document.createElement('div'); row.className='watch-item'; const info=document.createElement('div'); const d=pack.data||{}; info.innerHTML=`<div><strong>${d.ticker||'-'}</strong> · ${(d.stock_name||'').replace(/</g,'')}</div><div class="small">${(pack.saved_at||'').replace('T',' ').slice(0,19)} · ${d.news?.length||0} news · ${Object.keys(d.model_parameters||{}).length} params</div>`; row.appendChild(info); const load=document.createElement('button'); load.textContent=txt('loadSaved'); load.style.fontSize='12px'; load.style.color='var(--text)'; load.onclick=(e)=>{e.stopPropagation(); renderResult(JSON.parse(JSON.stringify(pack.data))); setPage('detail');}; const exp=document.createElement('button'); exp.textContent=txt('exportSaved'); exp.style.fontSize='12px'; exp.style.color='var(--text)'; exp.onclick=(e)=>{e.stopPropagation(); exportPack(pack);}; const del=document.createElement('button'); del.textContent='×'; del.title=txt('deleteSaved'); del.onclick=(e)=>{e.stopPropagation(); state.savedPacks.splice(idx,1); saveSavedPacks(); renderSavedPacks();}; row.appendChild(load); row.appendChild(exp); row.appendChild(del); box.appendChild(row);});}
+    function getAiPlaceholder(){return TEXT[state.lang].aiPlaceholder||'Ask something about this stock, chart, backtest, or news...';}
+    function formatAiText(raw){return String(raw||'-').replace(/\n/g,'<br>');}
+    function renderAiChat(){
+      const box=el('aiChatThread');
+      if(!box) return;
+      const msgs=state.aiChat.length?state.aiChat:[{role:'assistant',content:state.lang==='zh'?'先加载一只股票，我可以帮你总结走势、解释新闻、概括风险，或说明回测结果。':'Load a ticker first. I can summarize the stock, explain the latest news, highlight risks, or interpret the backtest.'}];
+      box.innerHTML=msgs.map(m=>`<div class="ai-msg ${m.role}"><div class="ai-msg-role">${m.role==='user'?'YOU':'AI'}</div><div>${formatAiText(m.content)}</div></div>`).join('');
+      box.scrollTop=box.scrollHeight;
+    }
+    function buildAiResponse(prompt){
+      if(!state.latest){return state.lang==='zh'?'请先在首页输入股票代码并点击“加载分析”。':'Please load a ticker first from the home page.';}
+      const d=state.latest||{}; const f=(d.key_factors||[]).filter(Boolean); const news=(d.news||[]).slice(0,3); const bm=d.backtest||{}; const metrics=d.forecast_metrics||{}; const lower=String(prompt||'').toLowerCase();
+      if(lower==='summary' || /summar|总结|概括|overview/.test(lower)) return state.lang==='zh' ? `${d.stock_name||d.ticker}（${d.ticker}）当前分析：${d.analysis||'暂无分析。'}\n\n预测观点：${d.forecast||'暂无预测。'}\n\n预计涨跌幅：${metrics.predicted_change_percent ?? '-'}%，预计结束价格：${metrics.projected_end_price ?? '-'}，区间：${metrics.estimated_low ?? '-'} ~ ${metrics.estimated_high ?? '-'}。` : `${d.stock_name||d.ticker} (${d.ticker}) summary: ${d.analysis||'No analysis available.'}\n\nForecast: ${d.forecast||'No forecast available.'}\n\nPredicted change: ${metrics.predicted_change_percent ?? '-'}%, projected end price: ${metrics.projected_end_price ?? '-'}, estimated range: ${metrics.estimated_low ?? '-'} to ${metrics.estimated_high ?? '-'}.`;
+      if(lower==='risk' || /risk|风险/.test(lower)) return state.lang==='zh' ? `这只股票目前值得注意的风险点：\n${(f.length?f.slice(0,5):['暂无明确风险因子。']).map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n回测参考：策略收益率 ${bm.return_pct ?? '-'}%，最大回撤 ${bm.max_drawdown_pct ?? '-'}%，胜率 ${bm.win_rate_pct ?? '-'}%。` : `Main risks worth watching:\n${(f.length?f.slice(0,5):['No clear risk factors available.']).map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\nBacktest reference: strategy return ${bm.return_pct ?? '-'}%, max drawdown ${bm.max_drawdown_pct ?? '-'}%, win rate ${bm.win_rate_pct ?? '-'}%.`;
+      if(lower==='news' || /news|新闻|latest/.test(lower)) return news.length ? (state.lang==='zh' ? `最近新闻重点：\n${news.map((n,i)=>`${i+1}. ${n.title || n.headline || '-'}`).join('\n')}\n\n这些新闻可能影响市场情绪和短期波动。` : `Latest news highlights:\n${news.map((n,i)=>`${i+1}. ${n.title || n.headline || '-'}`).join('\n')}\n\nThese headlines may affect sentiment and short-term volatility.`) : (state.lang==='zh'?'当前没有可用新闻。':'No recent news is available yet.');
+      if(/backtest|回测/.test(lower)) return state.lang==='zh' ? `回测结果：策略收益率 ${bm.return_pct ?? '-'}%，买入持有 ${bm.buy_hold_return_pct ?? '-'}%，相对超额 ${bm.alpha_vs_buy_hold_pct ?? '-'}%，最大回撤 ${bm.max_drawdown_pct ?? '-'}%，胜率 ${bm.win_rate_pct ?? '-'}%，交易次数 ${bm.trades ?? '-'}。` : `Backtest results: strategy return ${bm.return_pct ?? '-'}%, buy & hold ${bm.buy_hold_return_pct ?? '-'}%, alpha vs buy & hold ${bm.alpha_vs_buy_hold_pct ?? '-'}%, max drawdown ${bm.max_drawdown_pct ?? '-'}%, win rate ${bm.win_rate_pct ?? '-'}%, trades ${bm.trades ?? '-'}.`;
+      return state.lang==='zh' ? `我可以帮你总结走势、解释新闻、说明风险，或者解读回测。\n\n当前核心分析：${d.analysis||'-'}\n预测观点：${d.forecast||'-'}` : `I can help summarize the trend, explain the latest news, highlight risks, or interpret the backtest.\n\nCurrent analysis: ${d.analysis||'-'}\nForecast view: ${d.forecast||'-'}`;
+    }
+    function askAi(prompt){const input=el('aiInput'); const q=(prompt ?? input?.value ?? '').trim(); if(!q) return; state.aiChat.push({role:'user',content:q}); state.aiChat.push({role:'assistant',content:buildAiResponse(q)}); if(input) input.value=''; renderAiChat();}
+    function clearAiChat(){state.aiChat=[]; renderAiChat();}
+    function syncAiSide(){if(el('aiCoreSummary')) el('aiCoreSummary').textContent=(state.latest && (state.latest.analysis||state.latest.forecast)) ? `${state.latest.analysis||''} ${state.latest.forecast||''}`.trim() : '-'; if(el('aiFactorsList')) el('aiFactorsList').innerHTML=(state.latest?.key_factors||[]).map(x=>`<li>${x}</li>`).join('')||'<li>-</li>';}
+    function renderSavedPacks(){const targets=[el('aiSavedPackList')].filter(Boolean); if(!targets.length) return; targets.forEach(box=>box.innerHTML=''); if(!state.savedPacks.length){targets.forEach(box=>box.innerHTML=`<div class="empty">${txt('noSaved')}</div>`); return;} state.savedPacks.forEach((pack,idx)=>{targets.forEach(box=>{const row=document.createElement('div'); row.className='watch-item'; const info=document.createElement('div'); const d=pack.data||{}; info.innerHTML=`<div><strong>${d.ticker||'-'}</strong> · ${(d.stock_name||'').replace(/</g,'')}</div><div class="small">${(pack.saved_at||'').replace('T',' ').slice(0,19)} · ${d.news?.length||0} news · ${Object.keys(d.model_parameters||{}).length} params</div>`; row.appendChild(info); const load=document.createElement('button'); load.textContent=txt('loadSaved'); load.style.fontSize='12px'; load.style.color='var(--text)'; load.onclick=(e)=>{e.stopPropagation(); renderResult(JSON.parse(JSON.stringify(pack.data))); setPage('ai');}; const exp=document.createElement('button'); exp.textContent=txt('exportSaved'); exp.style.fontSize='12px'; exp.style.color='var(--text)'; exp.onclick=(e)=>{e.stopPropagation(); exportPack(pack);}; const del=document.createElement('button'); del.textContent='×'; del.title=txt('deleteSaved'); del.onclick=(e)=>{e.stopPropagation(); state.savedPacks.splice(idx,1); saveSavedPacks(); renderSavedPacks();}; row.appendChild(load); row.appendChild(exp); row.appendChild(del); box.appendChild(row);});});}
     function savePack(){const pack=buildPack(); if(!pack) return setError(txt('resultMissing')); state.savedPacks.unshift(pack); state.savedPacks=state.savedPacks.slice(0,20); saveSavedPacks(); renderSavedPacks(); setError(txt('saveDone'), false);}
     function exportPack(pack){const blob=new Blob([JSON.stringify(pack.data||pack,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); const name=(pack.data?.ticker||'stock')+'_saved_pack_v21.json'; a.download=name; a.click(); URL.revokeObjectURL(a.href); setError(txt('savedExported'), false);}
     function renderQuick(){const box=el('quickRow');box.innerHTML='';QUICK.forEach(t=>{const b=document.createElement('button');b.className='chip-btn';b.textContent=t;b.onclick=()=>{el('ticker').value=t;analyze();};box.appendChild(b);});}
@@ -726,7 +763,7 @@
       }catch(e){box.classList.remove('active');}
     }
 
-function renderForecastStats(metrics={}){const box=el('forecastStats');if(!box)return;const upProb=typeof metrics.up_probability==='number'?`${(metrics.up_probability*100).toFixed(1)}%`:'-';const items=[[txt('predictedChange'), metrics.predicted_change_pct, 'pct'],[txt('predictedEnd'), metrics.predicted_end_price, 'num'],[txt('predictedRange'), metrics.predicted_range_low!=null&&metrics.predicted_range_high!=null?`${fmt(metrics.predicted_range_low)} ~ ${fmt(metrics.predicted_range_high)}`:'-', 'text'],[txt('upProb'), upProb, 'text']];box.innerHTML=items.map((it,idx)=>`<div class="forecast-stat"><div class="k">${it[0]}</div><div class="v">${it[2]==='pct'&&typeof it[1]==='number'?`${it[1]>=0?'+':''}${fmt(it[1])}%`:it[1]??'-'}</div></div>`).join('');}
+function renderForecastStats(metrics={}){const box=el('forecastStats');if(!box)return;const items=[[txt('predictedChange'), metrics.predicted_change_pct],[txt('predictedEnd'), metrics.predicted_end_price],[txt('predictedRange'), metrics.predicted_range_low!=null&&metrics.predicted_range_high!=null?`${fmt(metrics.predicted_range_low)} ~ ${fmt(metrics.predicted_range_high)}`:'-']];box.innerHTML=items.map((it,idx)=>`<div class="forecast-stat"><div class="k">${it[0]}</div><div class="v">${idx===0&&typeof it[1]==='number'?`${it[1]>=0?'+':''}${fmt(it[1])}%`:it[1]??'-'}</div></div>`).join('');}
     function drawForecastPreview(points=[], metrics={}){const svg=el('forecastPreviewSvg'); if(!svg) return; const w=760,h=220,pad={l:28,r:22,t:18,b:28}; if(!Array.isArray(points)||!points.length){svg.innerHTML=`<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" class="forecast-axis">${txt('noData')}</text>`; return;} const vals=points.map(p=>Number(p.close)).filter(v=>Number.isFinite(v)); const low=Number(metrics.predicted_range_low); const high=Number(metrics.predicted_range_high); if(Number.isFinite(low)) vals.push(low); if(Number.isFinite(high)) vals.push(high); const min=Math.min(...vals), max=Math.max(...vals); const safeMin=min-(max-min||1)*0.08, safeMax=max+(max-min||1)*0.08; const innerW=w-pad.l-pad.r, innerH=h-pad.t-pad.b; const x=i=>pad.l+i*(innerW/Math.max(1,points.length-1)); const y=v=>pad.t+(safeMax-v)*(innerH/((safeMax-safeMin)||1)); let grid=''; for(let i=0;i<4;i++){const gy=pad.t+i*(innerH/3); grid+=`<line class="forecast-bg-grid" x1="${pad.l}" y1="${gy}" x2="${w-pad.r}" y2="${gy}" />`; } let band=''; if(Number.isFinite(low)&&Number.isFinite(high)){const yTop=y(high), yBot=y(low); band=`<rect class="forecast-band" x="${pad.l}" y="${Math.min(yTop,yBot)}" width="${innerW}" height="${Math.abs(yBot-yTop)}" rx="14" />`; } const d=points.map((p,i)=>`${i?'L':'M'} ${x(i)} ${y(Number(p.close))}`).join(' '); const start=points[0], end=points[points.length-1]; const endText=Number(metrics.predicted_end_price); const change=Number(metrics.predicted_change_pct); const endLabel=Number.isFinite(endText)?fmt(endText):fmt(Number(end.close)); const chLabel=Number.isFinite(change)?`${change>=0?'+':''}${fmt(change)}%`:'-'; const pillW=118,pillH=42,pillX=Math.max(pad.l, Math.min(w-pad.r-pillW, x(points.length-1)-pillW-8)), pillY=pad.t+4; const startDate=String(start.date||'').slice(5); const endDate=String(end.date||'').slice(5); svg.innerHTML=`${grid}${band}<path class="forecast-mini-line" d="${d}" /><circle class="forecast-mini-start" cx="${x(0)}" cy="${y(Number(start.close))}" r="4" /><circle class="forecast-mini-end" cx="${x(points.length-1)}" cy="${y(Number(end.close))}" r="5" /><text class="forecast-axis" x="${pad.l}" y="${h-8}">${startDate}</text><text class="forecast-axis" x="${w-pad.r}" y="${h-8}" text-anchor="end">${endDate}</text><text class="forecast-axis" x="${pad.l}" y="${pad.t-4}">${fmt(safeMax)}</text><text class="forecast-axis" x="${pad.l}" y="${h-10-pad.b}">${fmt(safeMin)}</text><rect class="forecast-pill" x="${pillX}" y="${pillY}" rx="14" ry="14" width="${pillW}" height="${pillH}"/><text class="forecast-tag" x="${pillX+12}" y="${pillY+17}">${txt('predictedEnd')}: ${endLabel}</text><text class="forecast-tag" x="${pillX+12}" y="${pillY+33}">${txt('predictedChange')}: ${chLabel}</text>`;}
 
     function renderMetrics(sum={}){const box=el('metricsBox');const T=TEXT[state.lang].metric;const items=[[T.start,sum['Start Price']],[T.end,sum['End Price']],[T.change,sum['Price Change (%)']],[T.avg,sum['Average Price']]];box.innerHTML=items.map((it,idx)=>`<div class="metric"><div class="k">${it[0]}</div><div class="v">${fmt(it[1])}${idx===2&&typeof it[1]==='number'?'%':''}</div><div class="s">${idx===3&&sum['Total Data Days']?`${state.lang==='zh'?'数据天数':'Data Days'}: ${sum['Total Data Days']}`:'&nbsp;'}</div></div>`).join('');}
@@ -749,12 +786,12 @@ function renderForecastStats(metrics={}){const box=el('forecastStats');if(!box)r
       document.querySelectorAll('#gainersList .ticker-row,#losersList .ticker-row').forEach(row=>row.addEventListener('click',()=>{el('ticker').value=row.dataset.symbol; analyze();}));
     }
     function renderResult(data){
-      state.latest=data; setAiStatus(''); state.newsRefreshSeq=0; state.newsPoolTotal=(data.news||[]).length; setNewsStatus('', ''); if(el('heroName')) el('heroName').textContent=`${data.stock_name} (${data.ticker})`; if(el('heroMeta')) el('heroMeta').textContent=`${data.date_range} · ${data.forecast_days}-day forecast · ${txt('generated')}: ${data.generated_at}`; if(el('sourceBadge')) el('sourceBadge').textContent=`${txt('source')}: ${data.source}`; if(el('confBadge')) el('confBadge').textContent=`${txt('confidence')}: ${data.confidence}`; if(el('tradeBadge')) el('tradeBadge').textContent=`${txt('lastTrade')}: ${data.last_trading_day||'-'}`;renderMetrics(data.historical_data_summary||{});drawChart(data.chart_points||[], data.forecast_points||[]); resetMainChartZoom(); renderCoreWidgets(data); syncChartModal(); el('factorsList').innerHTML=(data.key_factors||[]).map(x=>`<li>${x}</li>`).join('')||`<li>${txt('waiting')}</li>`;el('analysisText').textContent=data.analysis||'-';el('forecastText').textContent=data.forecast||'-';renderForecastStats(data.forecast_metrics||{});drawForecastPreview(data.forecast_points||[], data.forecast_metrics||{});renderBacktest(data.backtest||{}); if(el('startDate')&&data.start_date_used) el('startDate').value=data.start_date_used; if(el('endDate')&&data.end_date_used) el('endDate').value=data.end_date_used; syncDateBounds();renderSummaryTable(data.historical_data_summary||{});renderSample(data.raw_data_sample||[]);renderNews(data.news||[]);renderSnapshot(); if(state.page==='minimal'){ setPage('detail'); }}
+      state.latest=data; state.newsRefreshSeq=0; state.newsPoolTotal=(data.news||[]).length; setNewsStatus('', ''); if(el('heroName')) el('heroName').textContent=`${data.stock_name} (${data.ticker})`; if(el('heroMeta')) el('heroMeta').textContent=`${data.date_range} · ${data.forecast_days}-day forecast · ${txt('generated')}: ${data.generated_at}`; if(el('sourceBadge')) el('sourceBadge').textContent=`${txt('source')}: ${data.source}`; if(el('confBadge')) el('confBadge').textContent=`${txt('confidence')}: ${data.confidence}`; if(el('tradeBadge')) el('tradeBadge').textContent=`${txt('lastTrade')}: ${data.last_trading_day||'-'}`;renderMetrics(data.historical_data_summary||{});drawChart(data.chart_points||[], data.forecast_points||[]); resetMainChartZoom(); renderCoreWidgets(data); syncChartModal(); el('factorsList').innerHTML=(data.key_factors||[]).map(x=>`<li>${x}</li>`).join('')||`<li>${txt('waiting')}</li>`;el('analysisText').textContent=data.analysis||'-';el('forecastText').textContent=data.forecast||'-';renderForecastStats(data.forecast_metrics||{});drawForecastPreview(data.forecast_points||[], data.forecast_metrics||{});renderBacktest(data.backtest||{}); if(el('startDate')&&data.start_date_used) el('startDate').value=data.start_date_used; if(el('endDate')&&data.end_date_used) el('endDate').value=data.end_date_used; syncDateBounds();renderSummaryTable(data.historical_data_summary||{});renderSample(data.raw_data_sample||[]);renderNews(data.news||[]);renderSnapshot();syncAiSide(); if(!state.aiChat.length){state.aiChat=[{role:'assistant',content:buildAiResponse('summary')}];} renderAiChat(); if(state.page==='minimal'){ setPage('detail'); }}
     async function analyze(refetch=false){syncDateBounds();const payload={ticker:(el('ticker').value||'').trim(),start_date:(el('startDate')?.value||''),end_date:(el('endDate')?.value||''),forecast_days:Math.max(1, Math.min(30, Number(el('forecastDays').value||7))),lang:state.lang}; el('forecastDays').value=String(payload.forecast_days);if(!payload.ticker)return setError(state.lang==='zh'?'请输入股票代码。':'Enter a ticker.');setLoading(true);if(!refetch)setError('');try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'});const data=await res.json();if(!res.ok||data.status!=='ok')throw new Error(data.message||'Request failed');renderResult(data);loadMarket(false);}catch(err){setError(String(err.message||err));}finally{setLoading(false);}}
     async function refreshNews(){if(!state.latest){setNewsStatus(txt('newsNeedTicker'),'err'); return setError(txt('newsNeedTicker'));}const btn=el('refreshNewsBtn');btn.disabled=true;btn.textContent=txt('newsRefreshing');setNewsStatus(txt('newsRefreshing'));try{const nextSeq=(state.newsRefreshSeq||0)+1;const q=new URLSearchParams({ticker:state.latest.ticker,stock_name:state.latest.stock_name,lang:state.lang,refresh_seq:String(nextSeq),_:Date.now()});const res=await fetch('/api/news?'+q.toString(),{cache:'no-store'});const data=await res.json();if(!res.ok||data.status!=='ok') throw new Error(data.message||'News refresh failed');renderNews(data.items||[]);if(state.latest) state.latest.news=data.items||[];state.newsRefreshSeq=nextSeq;state.newsPoolTotal=Number(data.pool_total||data.items?.length||0);const slice=data.slice_label?` · ${data.slice_label}`:'';setNewsStatus(`${txt('newsUpdated')} ${nowTime()} · ${data.items?.length||0} items${slice}`,'ok');setError(txt('newsRefreshed'),false);}catch(e){const msg=String(e.message||e);setNewsStatus(`${txt('newsFailed')} ${msg}`,'err');setError(msg);}finally{btn.disabled=false;btn.textContent=txt('refreshNews');}}
     async function loadMarket(force=true){const btn=el('refreshMarketBtn');if(btn){btn.disabled=true;btn.textContent=txt('marketRefreshing');}setMarketStatus(txt('marketRefreshing'));try{const symbols=MARKET_DEFAULT.join(',');const res=await fetch('/api/market?symbols='+encodeURIComponent(symbols),{cache:'no-store'});const data=await res.json();if(res.ok&&data.status==='ok'){renderMarket(data.items||[]);setMarketStatus(`${txt('marketUpdated')} ${nowTime()}`,'ok');}else{throw new Error(data.message||'Market refresh failed');}}catch(e){const msg=String(e.message||e);if(force){renderMarket([]);}setMarketStatus(`${txt('marketFailed')} ${msg}`,'err');}finally{if(btn){btn.disabled=false;btn.textContent=txt('refreshMarket');}}}
     function exportJson(){if(!state.latest)return setError(state.lang==='zh'?'还没有可导出的结果。':'No result to export yet.');const blob=new Blob([JSON.stringify(state.latest,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${state.latest.ticker||'stock'}_analysis_v21.json`;a.click();URL.revokeObjectURL(a.href);setError(txt('exported'),false);}
-    function applyText(){document.querySelectorAll('[data-t]').forEach(node=>{const k=node.dataset.t;if(TEXT[state.lang][k])node.textContent=TEXT[state.lang][k];});document.querySelectorAll('[data-t-placeholder]').forEach(node=>{const k=node.dataset.tPlaceholder;if(TEXT[state.lang][k]) node.placeholder=TEXT[state.lang][k];});el('langBtn').textContent=state.lang==='en'?'中文':'English'; if(el('watchTicker')) el('watchTicker').placeholder=txt('watchPlaceholder'); if(el('detailLookup')) el('detailLookup').placeholder='AAPL / TSLA / 0700.HK';el('tabMinimal').textContent=txt('tabMinimal');el('tabDetail').textContent=txt('tabDetail');el('tabNews').textContent=txt('tabNews');el('tabBacktest').textContent=txt('tabBacktest');if(el('chartModalTitle')) el('chartModalTitle').textContent=txt('chartTitle');applyTheme();renderQuick();renderWatch();renderSavedPacks();renderSnapshot();renderChat();if(state.latest){analyze(true);}else{renderMetrics({});renderSummaryTable({});renderSample([]);renderNews([]);drawChart([]);renderCoreWidgets(null); renderForecastStats({});drawForecastPreview([], {});renderBacktest({}); if(el('factorsList')) el('factorsList').innerHTML=`<li>${txt('waiting')}</li>`; if(el('coreSummaryBox')) el('coreSummaryBox').style.display='none'; setNewsStatus('', '');}if(state.market.length){renderMarket(state.market);} else { setMarketStatus('', ''); }}
+    function applyText(){document.querySelectorAll('[data-t]').forEach(node=>{const k=node.dataset.t;if(TEXT[state.lang][k])node.textContent=TEXT[state.lang][k];});el('langBtn').textContent=state.lang==='en'?'中文':'English'; if(el('watchTicker')) el('watchTicker').placeholder=txt('watchPlaceholder'); if(el('detailLookup')) el('detailLookup').placeholder='AAPL / TSLA / 0700.HK';el('tabMinimal').textContent=txt('tabMinimal');el('tabDetail').textContent=txt('tabDetail');if(el('tabAi')) el('tabAi').textContent=txt('tabAi');el('tabNews').textContent=txt('tabNews');el('tabBacktest').textContent=txt('tabBacktest');if(el('aiInput')) el('aiInput').placeholder=getAiPlaceholder();if(el('chartModalTitle')) el('chartModalTitle').textContent=txt('chartTitle');applyTheme();renderQuick();renderWatch();renderSavedPacks();renderSnapshot();renderAiChat();syncAiSide();if(state.latest){analyze(true);}else{renderMetrics({});renderSummaryTable({});renderSample([]);renderNews([]);drawChart([]);renderCoreWidgets(null); renderForecastStats({});drawForecastPreview([], {});renderBacktest({}); if(el('factorsList')) el('factorsList').innerHTML=`<li>${txt('waiting')}</li>`; if(el('coreSummaryBox')) el('coreSummaryBox').style.display='none'; syncAiSide(); renderAiChat(); setNewsStatus('', '');}if(state.market.length){renderMarket(state.market);} else { setMarketStatus('', ''); }}
     document.addEventListener('DOMContentLoaded',()=>{
       const on=(id,event,handler)=>{const node=el(id); if(node) node.addEventListener(event,handler);};
       setDefaults();
@@ -768,16 +805,14 @@ function renderForecastStats(metrics={}){const box=el('forecastStats');if(!box)r
       document.addEventListener('click',e=>{const wrap=document.querySelector('.suggest-wrap'); if(wrap && !wrap.contains(e.target)){el('tickerSuggest')?.classList.remove('active');}});
       on('savePackBtn','click',savePack);
       on('exportBtn','click',exportJson);
+      on('aiSendBtn','click',()=>askAi());
+      on('aiClearBtn','click',clearAiChat);
+      document.querySelectorAll('[data-ai-prompt]').forEach(btn=>btn.addEventListener('click',()=>askAi(btn.dataset.aiPrompt)));
+      on('aiInput','keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){askAi();}});
       on('refreshNewsBtn','click',refreshNews);
       on('refreshMarketBtn','click',()=>loadMarket(true));
       on('detailLookupBtn','click',()=>{const t=(el('detailLookup')?.value||'').trim();if(t){el('ticker').value=t.toUpperCase(); analyze();}});
       on('addWatchBtn','click',addWatch);
-      on('aiSendBtn','click',()=>sendAiMessage());
-      on('aiClearBtn','click',clearChat);
-      on('aiPromptSummary','click',()=>sendAiMessage(state.lang==='zh'?'请根据当前页面的数据，用简单的话总结这只股票。':'Summarize this stock based on the current dashboard data.'));
-      on('aiPromptRisk','click',()=>sendAiMessage(state.lang==='zh'?'根据当前页面的数据，这只股票的主要风险是什么？':'Based on the current dashboard data, what are the main risks for this stock?'));
-      on('aiPromptNews','click',()=>sendAiMessage(state.lang==='zh'?'请结合当前页面新闻，解释最近发生了什么，以及可能怎样影响这只股票。':'Use the current news on the page to explain what happened recently and how it may affect this stock.'));
-      on('aiInput','keydown',e=>{if(e.key==='Enter' && !e.shiftKey){e.preventDefault(); sendAiMessage();}});
       on('chartExpandBtn','click',openChartModal);
       on('chartExpandBtn2','click',openChartModal);
       on('chartCloseBtn','click',closeChartModal);

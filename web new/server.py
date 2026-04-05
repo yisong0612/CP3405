@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-import os
 import pathlib
 import re
 import threading
@@ -89,7 +88,7 @@ TRANSLATIONS = {
         "start_later": "Start date cannot be later than the adjusted end date.",
         "network_hint": "Check your internet connection and whether your network can open finance.yahoo.com.",
         "download_note": "Historical prices were downloaded from Yahoo Finance.",
-        "forecast_note": "Forecast text is produced by a lightweight data-driven pattern model built from historical prices. It is still an estimate, not real future data.",
+        "forecast_note": "Forecast text is a rule-based estimate from those historical prices.",
         "sample_short_analysis": "Historical sample is short, so the pattern is not stable enough for a strong signal.",
         "sample_short_forecast": "The next {days} days may be mostly sideways because there are too few observations.",
         "small_sample": "Small historical sample",
@@ -105,10 +104,8 @@ TRANSLATIONS = {
         "medium": "Medium",
         "low": "Low",
         "analysis_sentence": "The 5-day trend is {short}, the 20-day trend is {long}, and daily volatility is about {vol}%.",
-        "forecast_sentence": "For the next {days} days, the smart model points to a {direction} bias using similar historical patterns, momentum, moving averages, and recent volatility. This is an estimate, not real future data.",
+        "forecast_sentence": "For the next {days} days, the model points to a {direction} bias based on moving-average slope, overall range change, and recent volatility. This is an estimate, not real future data.",
         "forecast_result_sentence": "Estimated {days}-day change: {change}%. Projected end price: {price}. Estimated range: {low} to {high}.",
-        "factor_pattern": "Historical pattern match",
-        "factor_momentum": "Momentum structure",
         "factor_5ma": "5-day moving average",
         "factor_20ma": "20-day moving average",
         "factor_change": "Historical price change",
@@ -128,7 +125,7 @@ TRANSLATIONS = {
         "start_later": "开始日期不能晚于调整后的结束日期。",
         "network_hint": "请检查网络连接，并确认你的网络可以打开 finance.yahoo.com。",
         "download_note": "历史价格已从 Yahoo Finance 下载。",
-        "forecast_note": "预测文字由基于历史价格的轻量数据驱动模型生成，仍然只是估计，不代表真实未来价格。",
+        "forecast_note": "预测文字是根据这些历史价格生成的规则型估计，不代表真实未来价格。",
         "sample_short_analysis": "历史样本较短，因此当前走势信号还不够稳定。",
         "sample_short_forecast": "未来 {days} 天可能以震荡为主，因为可用观测值太少。",
         "small_sample": "历史样本较少",
@@ -144,7 +141,7 @@ TRANSLATIONS = {
         "medium": "中",
         "low": "低",
         "analysis_sentence": "5日趋势为{short}，20日趋势为{long}，日波动率约为 {vol}%。",
-        "forecast_sentence": "未来 {days} 天，智能模型会结合相似历史形态、动量、均线和近期波动率，判断走势偏{direction}。这只是估计，不是真实未来价格。",
+        "forecast_sentence": "未来 {days} 天，模型根据均线斜率、区间涨跌幅和近期波动率，判断走势偏{direction}。这只是估计，不是真实未来价格。",
         "forecast_result_sentence": "预计未来 {days} 天涨跌幅：{change}%。预计结束价格约为 {price}。估计区间：{low} 到 {high}。",
         "factor_5ma": "5日移动平均线",
         "factor_20ma": "20日移动平均线",
@@ -207,108 +204,6 @@ def _fetch_text(url: str) -> str:
 
 def _fetch_json(url: str) -> Dict[str, Any]:
     return json.loads(_fetch_text(url))
-
-
-def _post_json(url: str, payload: Dict[str, Any], headers: Dict[str, str] | None = None) -> Dict[str, Any]:
-    data = json.dumps(payload).encode("utf-8")
-    req_headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-    }
-    if headers:
-        req_headers.update(headers)
-    req = urllib.request.Request(url, data=data, headers=req_headers, method="POST")
-    with urllib.request.urlopen(req, timeout=45) as resp:
-        charset = resp.headers.get_content_charset() or "utf-8"
-        return json.loads(resp.read().decode(charset, errors="replace"))
-
-
-def _compact_analysis_context(context: Dict[str, Any]) -> Dict[str, Any]:
-    if not isinstance(context, dict):
-        return {}
-    keys = [
-        "ticker", "stock_name", "date_range", "source", "confidence", "last_trading_day",
-        "historical_data_summary", "analysis", "forecast", "forecast_summary", "forecast_metrics",
-        "key_factors", "news", "backtest",
-    ]
-    out = {k: context.get(k) for k in keys if k in context}
-    news = out.get("news") or []
-    if isinstance(news, list):
-        out["news"] = news[:5]
-    return out
-
-
-def load_local_env() -> None:
-    env_path = BASE_DIR / ".env"
-    if not env_path.exists():
-        return
-    for raw in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
-            os.environ[key] = value
-
-
-def llm_chat(messages: List[Dict[str, str]], lang: str, context: Dict[str, Any] | None = None) -> Dict[str, Any]:
-    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key:
-        msg = (
-            "OPENAI_API_KEY is missing. Add it to your environment before using the AI assistant."
-            if get_lang(lang) == "en"
-            else "还没有检测到 OPENAI_API_KEY。请先在环境变量中添加它，再使用 AI 助手。"
-        )
-        return {"status": "error", "message": msg, "code": "missing_api_key"}
-
-    model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
-    base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-    endpoint = base_url + "/chat/completions"
-    safe_messages = []
-    for item in (messages or [])[-12:]:
-        role = str(item.get("role", "user"))
-        content = str(item.get("content", "")).strip()
-        if role not in {"user", "assistant", "system"} or not content:
-            continue
-        safe_messages.append({"role": role, "content": content[:6000]})
-
-    if not safe_messages:
-        msg = "Message is empty." if get_lang(lang) == "en" else "消息内容不能为空。"
-        return {"status": "error", "message": msg, "code": "empty_message"}
-
-    analysis_context = json.dumps(_compact_analysis_context(context or {}), ensure_ascii=False, indent=2)
-    system_prompt = (
-        "You are an AI stock assistant embedded in a browser-based dashboard. "
-        "Use the supplied dashboard context when relevant, especially ticker, forecast, backtest, and news. "
-        "Do not claim certainty about future price moves. "
-        "Keep answers practical, concise, and easy to understand. "
-        "When the user asks for a recommendation, present it as scenario-based thinking rather than guaranteed advice.\n\n"
-        f"Dashboard context:\n{analysis_context}"
-    )
-    payload = {
-        "model": model,
-        "temperature": 0.4,
-        "messages": [{"role": "system", "content": system_prompt}] + safe_messages,
-    }
-    try:
-        raw = _post_json(endpoint, payload, headers={"Authorization": f"Bearer {api_key}"})
-        choices = raw.get("choices") or []
-        if not choices:
-            raise RuntimeError("The LLM returned an empty response.")
-        message = ((choices[0] or {}).get("message") or {})
-        content = str(message.get("content", "")).strip()
-        if not content:
-            raise RuntimeError("The LLM returned an empty message.")
-        return {"status": "ok", "reply": content, "model": raw.get("model") or model}
-    except urllib.error.HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace") if hasattr(exc, "read") else ""
-        raise RuntimeError(f"LLM request failed with HTTP {exc.code}. {body[:300]}")
-    except urllib.error.URLError as exc:
-        reason = getattr(exc, "reason", exc)
-        raise RuntimeError(f"Network error while connecting to the LLM service: {reason}")
 
 
 def _normalize_ticker_for_news(ticker: str) -> str:
@@ -451,7 +346,7 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
                 result.append(d.isoformat())
         return result
 
-    if len(prices) < 35:
+    if len(prices) < 10:
         future_days = next_trading_days(points[-1]["date"], forecast_days) if points else []
         forecast_points = [{"date": day, "close": round(last_price, 2)} for day in future_days]
         return {
@@ -465,16 +360,16 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
             "predicted_range_high": round(last_price, 2),
             "forecast_points": forecast_points,
             "forecast_summary": t(lang, "forecast_result_sentence", days=forecast_days, change="0.00", price=f"{last_price:.2f}", low=f"{last_price:.2f}", high=f"{last_price:.2f}"),
-            "up_probability": 0.5,
-            "down_probability": 0.5,
-            "model_name": "Smart Pattern Model",
-            "training_samples": 0,
         }
 
     returns = []
     for prev, curr in zip(prices[:-1], prices[1:]):
         if prev:
             returns.append((curr - prev) / prev)
+    mean_r = sum(returns) / len(returns) if returns else 0.0
+    vol = 0.0
+    if returns:
+        vol = (sum((r - mean_r) ** 2 for r in returns) / len(returns)) ** 0.5
 
     def moving_average(values: List[float], window: int) -> List[float]:
         if len(values) < window:
@@ -492,120 +387,25 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
         denominator = sum((xi - x_mean) ** 2 for xi in x) or 1.0
         return numerator / denominator
 
-    def stddev(values: List[float]) -> float:
-        if not values:
-            return 0.0
-        mean_v = sum(values) / len(values)
-        return (sum((v - mean_v) ** 2 for v in values) / len(values)) ** 0.5
-
-    def safe_return(curr: float, prev: float) -> float:
-        return ((curr - prev) / prev) if prev else 0.0
-
-    def feature_at(i: int) -> List[float]:
-        # i is the index of the current day used as the decision point.
-        ma5 = sum(prices[i - 4:i + 1]) / 5
-        ma10 = sum(prices[i - 9:i + 1]) / 10
-        ma20 = sum(prices[i - 19:i + 1]) / 20
-        r1 = safe_return(prices[i], prices[i - 1])
-        r3 = safe_return(prices[i], prices[i - 3])
-        r5 = safe_return(prices[i], prices[i - 5])
-        r10 = safe_return(prices[i], prices[i - 10])
-        vol5 = stddev(returns[i - 5:i])
-        vol10 = stddev(returns[i - 10:i])
-        ma_gap_short = safe_return(prices[i], ma5)
-        ma_gap_long = safe_return(prices[i], ma20)
-        ma5_slope = safe_return(ma5, sum(prices[i - 9:i - 4]) / 5)
-        ma20_slope = safe_return(ma20, sum(prices[i - 24:i - 19]) / 5)
-        pos_count = sum(1 for r in returns[i - 10:i] if r > 0) / 10.0
-        return [r1, r3, r5, r10, vol5, vol10, ma_gap_short, ma_gap_long, ma5_slope, ma20_slope, pos_count, safe_return(ma5, ma20), safe_return(ma10, ma20)]
-
-    current_index = len(prices) - 1
-    current_features = feature_at(current_index)
-
-    samples = []
-    for i in range(24, len(prices) - forecast_days):
-        future_change = safe_return(prices[i + forecast_days], prices[i])
-        samples.append({
-            "features": feature_at(i),
-            "future_change": future_change,
-            "up": 1.0 if future_change > 0 else 0.0,
-        })
-
-    feature_count = len(current_features)
-    feature_means = []
-    feature_stds = []
-    for j in range(feature_count):
-        vals = [s["features"][j] for s in samples]
-        mean_v = sum(vals) / len(vals) if vals else 0.0
-        std_v = stddev(vals) or 1e-6
-        feature_means.append(mean_v)
-        feature_stds.append(std_v)
-
-    def normalize(vec: List[float]) -> List[float]:
-        return [(v - m) / s for v, m, s in zip(vec, feature_means, feature_stds)]
-
-    current_norm = normalize(current_features)
-    scored = []
-    for s in samples:
-        vec = normalize(s["features"])
-        dist = sum((a - b) ** 2 for a, b in zip(current_norm, vec)) ** 0.5
-        weight = 1.0 / (1.0 + dist)
-        scored.append((weight, dist, s))
-    scored.sort(key=lambda item: item[1])
-    neighbors = scored[: min(30, len(scored))]
-
-    total_weight = sum(w for w, _, _ in neighbors) or 1.0
-    weighted_future_change = sum(w * s["future_change"] for w, _, s in neighbors) / total_weight
-    up_probability = sum(w * s["up"] for w, _, s in neighbors) / total_weight
-
-    mean_r = sum(returns) / len(returns) if returns else 0.0
-    vol = stddev(returns)
     short_ma = moving_average(prices, 5)
     long_ma = moving_average(prices, 20)
-    short_slope = slope_last(short_ma) / last_price if last_price else 0.0
-    long_slope = slope_last(long_ma) / last_price if last_price else 0.0
-    recent_momentum = sum(returns[-10:]) / min(len(returns), 10) if returns else 0.0
+    short_slope = slope_last(short_ma)
+    long_slope = slope_last(long_ma)
+    pct = float(summary.get("Price Change (%)", 0.0))
+    score = 0.0
+    score += 1.0 if short_slope > 0 else -1.0 if short_slope < 0 else 0.0
+    score += 0.7 if long_slope > 0 else -0.7 if long_slope < 0 else 0.0
+    score += 0.3 if pct > 0 else -0.3 if pct < 0 else 0.0
 
-    trend_blend = (0.45 * recent_momentum) + (0.35 * short_slope) + (0.20 * long_slope)
-    expected_change = (0.68 * weighted_future_change) + (0.32 * forecast_days * trend_blend)
-
-    clamp = max(0.02, min(0.18, (vol * (forecast_days ** 0.5) * 2.8) if vol else 0.08))
-    expected_change = max(-clamp, min(clamp, expected_change))
-
-    if expected_change >= 0.01 or up_probability >= 0.58:
+    if score >= 1.0:
         direction = t(lang, "bullish")
-    elif expected_change <= -0.01 or up_probability <= 0.42:
+    elif score <= -1.0:
         direction = t(lang, "bearish")
     else:
         direction = t(lang, "sideways")
 
-    separation = abs(up_probability - 0.5) * 2
-    avg_dist = sum(dist for _, dist, _ in neighbors) / len(neighbors) if neighbors else 9.0
-    pattern_match_score = max(0.0, min(1.0, 1 / (1 + avg_dist)))
-    confidence_score = (0.45 * separation) + (0.35 * pattern_match_score) + (0.20 * min(1.0, len(samples) / 160.0))
-    if vol > 0.03:
-        confidence_score *= 0.82
-    if confidence_score >= 0.66:
-        confidence = t(lang, "high")
-    elif confidence_score >= 0.42:
-        confidence = t(lang, "medium")
-    else:
-        confidence = t(lang, "low")
-
-    predicted_change = expected_change * 100
-    predicted_end_price = last_price * (1 + expected_change)
-    band_pct = max(1.2, vol * (forecast_days ** 0.5) * (1.4 + (1.2 - separation)) * 100)
-    range_low = predicted_end_price * (1 - band_pct / 100)
-    range_high = predicted_end_price * (1 + band_pct / 100)
-
-    future_days = next_trading_days(points[-1]["date"], forecast_days) if points else []
-    forecast_points = []
-    running_price = last_price
-    daily_step = (1 + expected_change) ** (1 / max(forecast_days, 1)) - 1
-    for day in future_days:
-        running_price = running_price * (1 + daily_step)
-        forecast_points.append({"date": day, "close": round(running_price, 2)})
-
+    high_vol = vol >= 0.02
+    confidence = t(lang, "medium") if not high_vol else t(lang, "low")
     analysis = t(
         lang,
         "analysis_sentence",
@@ -613,10 +413,29 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
         long=t(lang, "upward") if long_slope > 0 else t(lang, "downward") if long_slope < 0 else t(lang, "flat"),
         vol=round(vol * 100, 2),
     )
-    if lang == "zh":
-        analysis += f" 相似历史样本共 {len(samples)} 个，模型估计上涨概率约为 {up_probability * 100:.1f}%。"
-    else:
-        analysis += f" The model found {len(samples)} similar historical samples and estimates an upside probability of about {up_probability * 100:.1f}%."
+
+    last_10_mean = sum(returns[-10:]) / min(len(returns), 10) if returns else 0.0
+    short_ret = short_slope / last_price if last_price else 0.0
+    long_ret = long_slope / last_price if last_price else 0.0
+    expected_daily = (0.5 * short_ret) + (0.25 * long_ret) + (0.25 * last_10_mean)
+    clamp = max(0.005, min(0.04, (vol * 2.2) if vol else 0.02))
+    if expected_daily > clamp:
+        expected_daily = clamp
+    elif expected_daily < -clamp:
+        expected_daily = -clamp
+
+    predicted_change = ((1 + expected_daily) ** forecast_days - 1) * 100
+    predicted_end_price = last_price * ((1 + expected_daily) ** forecast_days)
+    band_pct = vol * (forecast_days ** 0.5) * 100
+    range_low = predicted_end_price * (1 - band_pct / 100)
+    range_high = predicted_end_price * (1 + band_pct / 100)
+
+    future_days = next_trading_days(points[-1]["date"], forecast_days) if points else []
+    forecast_points = []
+    running_price = last_price
+    for day in future_days:
+        running_price = running_price * (1 + expected_daily)
+        forecast_points.append({"date": day, "close": round(running_price, 2)})
 
     forecast = t(lang, "forecast_sentence", days=forecast_days, direction=direction)
     forecast_summary = t(
@@ -628,17 +447,12 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
         low=f"{range_low:.2f}",
         high=f"{range_high:.2f}",
     )
-
     return {
         "analysis": analysis,
         "forecast": forecast,
         "confidence": confidence,
         "key_factors": [
-            t(lang, "factor_pattern"),
-            t(lang, "factor_momentum"),
-            t(lang, "factor_5ma"),
-            t(lang, "factor_20ma"),
-            t(lang, "factor_vol"),
+            t(lang, "factor_5ma"), t(lang, "factor_20ma"), t(lang, "factor_change"), t(lang, "factor_vol"), t(lang, "factor_events")
         ],
         "predicted_change_pct": round(predicted_change, 2),
         "predicted_end_price": round(predicted_end_price, 2),
@@ -646,11 +460,6 @@ def fallback_forecast(points: List[Dict[str, Any]], forecast_days: int, summary:
         "predicted_range_high": round(range_high, 2),
         "forecast_points": forecast_points,
         "forecast_summary": forecast_summary,
-        "up_probability": round(up_probability, 4),
-        "down_probability": round(1 - up_probability, 4),
-        "model_name": "Smart Pattern Model",
-        "training_samples": len(samples),
-        "pattern_match_score": round(pattern_match_score, 4),
     }
 
 
@@ -1067,10 +876,6 @@ def analyse_stock(config: AnalysisConfig) -> Dict[str, Any]:
             "predicted_end_price": forecast["predicted_end_price"],
             "predicted_range_low": forecast["predicted_range_low"],
             "predicted_range_high": forecast["predicted_range_high"],
-            "up_probability": forecast.get("up_probability"),
-            "down_probability": forecast.get("down_probability"),
-            "pattern_match_score": forecast.get("pattern_match_score"),
-            "training_samples": forecast.get("training_samples"),
         },
         "forecast_points": forecast["forecast_points"],
         "backtest": backtest,
@@ -1143,45 +948,35 @@ class AppHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path != "/api/analyze":
+            self._send_text("Not Found", status=404, content_type="text/plain; charset=utf-8")
+            return
         try:
             content_length = int(self.headers.get("Content-Length", "0"))
             body = self.rfile.read(content_length).decode("utf-8") if content_length else "{}"
             payload = json.loads(body or "{}")
+            ticker = str(payload.get("ticker", "")).strip()
+            forecast_days = int(payload.get("forecast_days", 7))
             lang = get_lang(payload.get("lang", "en"))
-
-            if parsed.path == "/api/analyze":
-                ticker = str(payload.get("ticker", "")).strip()
-                forecast_days = int(payload.get("forecast_days", 7))
-                if not ticker:
-                    self._send_json({"status": "error", "message": t(lang, "ticker_required")}, status=400)
-                    return
-                if forecast_days < 1 or forecast_days > 30:
-                    self._send_json({"status": "error", "message": t(lang, "forecast_days")}, status=400)
-                    return
-                start_date = str(payload.get("start_date", "")).strip()
-                end_date = str(payload.get("end_date", "")).strip()
-                if not start_date or not end_date:
-                    today = dt.date.today()
-                    end_date = today.isoformat()
-                    start_date = (today - dt.timedelta(days=365)).isoformat()
-                if not validate_date(start_date) or not validate_date(end_date):
-                    self._send_json({"status": "error", "message": t(lang, "date_format")}, status=400)
-                    return
-                if dt.datetime.strptime(end_date, "%Y-%m-%d").date() < dt.datetime.strptime(start_date, "%Y-%m-%d").date():
-                    self._send_json({"status": "error", "message": t(lang, "end_before_start")}, status=400)
-                    return
-                self._send_json(analyse_stock(AnalysisConfig(ticker=ticker, start_date=start_date, end_date=end_date, forecast_days=forecast_days, lang=lang)))
+            if not ticker:
+                self._send_json({"status": "error", "message": t(lang, "ticker_required")}, status=400)
                 return
-
-            if parsed.path == "/api/llm-chat":
-                messages = payload.get("messages") or []
-                context = payload.get("context") or {}
-                reply = llm_chat(messages=messages, lang=lang, context=context)
-                status_code = 200 if reply.get("status") == "ok" else 400
-                self._send_json(reply, status=status_code)
+            if forecast_days < 1 or forecast_days > 30:
+                self._send_json({"status": "error", "message": t(lang, "forecast_days")}, status=400)
                 return
-
-            self._send_text("Not Found", status=404, content_type="text/plain; charset=utf-8")
+            start_date = str(payload.get("start_date", "")).strip()
+            end_date = str(payload.get("end_date", "")).strip()
+            if not start_date or not end_date:
+                today = dt.date.today()
+                end_date = today.isoformat()
+                start_date = (today - dt.timedelta(days=365)).isoformat()
+            if not validate_date(start_date) or not validate_date(end_date):
+                self._send_json({"status": "error", "message": t(lang, "date_format")}, status=400)
+                return
+            if dt.datetime.strptime(end_date, "%Y-%m-%d").date() < dt.datetime.strptime(start_date, "%Y-%m-%d").date():
+                self._send_json({"status": "error", "message": t(lang, "end_before_start")}, status=400)
+                return
+            self._send_json(analyse_stock(AnalysisConfig(ticker=ticker, start_date=start_date, end_date=end_date, forecast_days=forecast_days, lang=lang)))
         except Exception as exc:
             traceback.print_exc()
             lang = "zh" if 'lang' in locals() and lang == 'zh' else 'en'
@@ -1192,7 +987,6 @@ def main() -> None:
     import os
     import socket
 
-    load_local_env()
     render_port = os.environ.get("PORT")
     is_render = render_port is not None
 
