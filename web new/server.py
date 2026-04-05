@@ -886,6 +886,109 @@ def analyse_stock(config: AnalysisConfig) -> Dict[str, Any]:
     }
 
 
+def _safe_trim(value: Any, limit: int = 1200) -> str:
+    text = str(value or "").strip()
+    return text if len(text) <= limit else text[: limit - 3] + "..."
+
+
+def build_llm_system_prompt(lang: str) -> str:
+    if get_lang(lang) == "zh":
+        return (
+            "你是一个股票分析助手。请只基于用户提供的股票分析、新闻、回测和指标上下文来回答。"
+            "不要假装有实时外部数据，不要编造未给出的事实。回答要清楚、实用、简洁。"
+            "如果信息不足，要直接说明。不要提供绝对化的投资保证。"
+        )
+    return (
+        "You are a stock analysis assistant. Answer only from the stock analysis, news, backtest, and metric context provided by the app. "
+        "Do not pretend to have live external data and do not invent facts that were not provided. Keep answers clear, practical, and concise. "
+        "Say when information is insufficient. Do not give guaranteed investment outcomes."
+    )
+
+
+def build_llm_user_prompt(message: str, context: Dict[str, Any], lang: str) -> str:
+    news = context.get("news") or []
+    news_lines = []
+    for item in news[:5]:
+        title = item.get("title") or item.get("headline") or "-"
+        source = item.get("source") or item.get("publisher") or "-"
+        news_lines.append(f"- {title} ({source})")
+    backtest = context.get("backtest") or {}
+    metrics = context.get("forecast_metrics") or {}
+    factors = context.get("key_factors") or []
+    payload = {
+        "ticker": context.get("ticker"),
+        "stock_name": context.get("stock_name"),
+        "analysis": _safe_trim(context.get("analysis"), 1500),
+        "forecast": _safe_trim(context.get("forecast"), 1500),
+        "key_factors": factors[:8],
+        "forecast_metrics": metrics,
+        "backtest": {
+            "return_pct": backtest.get("return_pct"),
+            "max_drawdown_pct": backtest.get("max_drawdown_pct"),
+            "win_rate_pct": backtest.get("win_rate_pct"),
+            "trades": backtest.get("trades"),
+            "buy_hold_return_pct": backtest.get("buy_hold_return_pct"),
+            "alpha_vs_buy_hold_pct": backtest.get("alpha_vs_buy_hold_pct"),
+        },
+        "news": news_lines,
+    }
+    if get_lang(lang) == "zh":
+        return (
+            f"用户问题：{message}\n\n"
+            f"可用上下文（JSON 摘要）：\n{json.dumps(payload, ensure_ascii=False, indent=2)}\n\n"
+            "请基于这些信息回答。可以适当分点，但不要太长。"
+        )
+    return (
+        f"User question: {message}\n\n"
+        f"Available context (JSON summary):\n{json.dumps(payload, ensure_ascii=False, indent=2)}\n\n"
+        "Answer using only this information. Bullet points are fine, but keep the response reasonably concise."
+    )
+
+
+def call_openai_chat(message: str, context: Dict[str, Any], lang: str, history: List[Dict[str, str]] | None = None) -> Dict[str, Any]:
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set on the server.")
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+    messages = [{"role": "system", "content": build_llm_system_prompt(lang)}]
+    for item in (history or [])[-6:]:
+        role = "assistant" if str(item.get("role")) == "assistant" else "user"
+        content = _safe_trim(item.get("content"), 2000)
+        if content:
+            messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": build_llm_user_prompt(message, context, lang)})
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.4,
+    }
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"OpenAI request failed with HTTP {exc.code}: {detail}")
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"OpenAI network error: {getattr(exc, 'reason', exc)}")
+    data = json.loads(raw)
+    choices = data.get("choices") or []
+    if not choices:
+        raise RuntimeError("OpenAI returned no choices.")
+    reply = (((choices[0] or {}).get("message") or {}).get("content") or "").strip()
+    if not reply:
+        raise RuntimeError("OpenAI returned an empty reply.")
+    return {"reply": reply, "model": data.get("model") or model}
+
+
 class AppHandler(BaseHTTPRequestHandler):
     def _send_text(self, text: str, status: int = 200, content_type: str = "text/html; charset=utf-8") -> None:
         encoded = text.encode("utf-8")
@@ -948,39 +1051,66 @@ class AppHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
-        if parsed.path != "/api/analyze":
-            self._send_text("Not Found", status=404, content_type="text/plain; charset=utf-8")
-            return
         try:
             content_length = int(self.headers.get("Content-Length", "0"))
             body = self.rfile.read(content_length).decode("utf-8") if content_length else "{}"
             payload = json.loads(body or "{}")
-            ticker = str(payload.get("ticker", "")).strip()
-            forecast_days = int(payload.get("forecast_days", 7))
+        except Exception:
+            self._send_json({"status": "error", "message": "Invalid JSON body."}, status=400)
+            return
+
+        if parsed.path == "/api/analyze":
+            try:
+                ticker = str(payload.get("ticker", "")).strip()
+                forecast_days = int(payload.get("forecast_days", 7))
+                lang = get_lang(payload.get("lang", "en"))
+                if not ticker:
+                    self._send_json({"status": "error", "message": t(lang, "ticker_required")}, status=400)
+                    return
+                if forecast_days < 1 or forecast_days > 30:
+                    self._send_json({"status": "error", "message": t(lang, "forecast_days")}, status=400)
+                    return
+                start_date = str(payload.get("start_date", "")).strip()
+                end_date = str(payload.get("end_date", "")).strip()
+                if not start_date or not end_date:
+                    today = dt.date.today()
+                    end_date = today.isoformat()
+                    start_date = (today - dt.timedelta(days=365)).isoformat()
+                if not validate_date(start_date) or not validate_date(end_date):
+                    self._send_json({"status": "error", "message": t(lang, "date_format")}, status=400)
+                    return
+                if dt.datetime.strptime(end_date, "%Y-%m-%d").date() < dt.datetime.strptime(start_date, "%Y-%m-%d").date():
+                    self._send_json({"status": "error", "message": t(lang, "end_before_start")}, status=400)
+                    return
+                self._send_json(analyse_stock(AnalysisConfig(ticker=ticker, start_date=start_date, end_date=end_date, forecast_days=forecast_days, lang=lang)))
+                return
+            except Exception as exc:
+                traceback.print_exc()
+                lang = "zh" if 'lang' in locals() and lang == 'zh' else 'en'
+                self._send_json({"status": "error", "message": str(exc), "hint": t(lang, "network_hint")}, status=500)
+                return
+
+        if parsed.path == "/api/llm-chat":
             lang = get_lang(payload.get("lang", "en"))
-            if not ticker:
-                self._send_json({"status": "error", "message": t(lang, "ticker_required")}, status=400)
+            message = str(payload.get("message", "")).strip()
+            if not message:
+                self._send_json({"status": "error", "message": "Message is required."}, status=400)
                 return
-            if forecast_days < 1 or forecast_days > 30:
-                self._send_json({"status": "error", "message": t(lang, "forecast_days")}, status=400)
+            try:
+                result = call_openai_chat(
+                    message=message,
+                    context=payload.get("context") or {},
+                    lang=lang,
+                    history=payload.get("history") or [],
+                )
+                self._send_json({"status": "ok", **result})
                 return
-            start_date = str(payload.get("start_date", "")).strip()
-            end_date = str(payload.get("end_date", "")).strip()
-            if not start_date or not end_date:
-                today = dt.date.today()
-                end_date = today.isoformat()
-                start_date = (today - dt.timedelta(days=365)).isoformat()
-            if not validate_date(start_date) or not validate_date(end_date):
-                self._send_json({"status": "error", "message": t(lang, "date_format")}, status=400)
+            except Exception as exc:
+                traceback.print_exc()
+                self._send_json({"status": "error", "message": str(exc)}, status=500)
                 return
-            if dt.datetime.strptime(end_date, "%Y-%m-%d").date() < dt.datetime.strptime(start_date, "%Y-%m-%d").date():
-                self._send_json({"status": "error", "message": t(lang, "end_before_start")}, status=400)
-                return
-            self._send_json(analyse_stock(AnalysisConfig(ticker=ticker, start_date=start_date, end_date=end_date, forecast_days=forecast_days, lang=lang)))
-        except Exception as exc:
-            traceback.print_exc()
-            lang = "zh" if 'lang' in locals() and lang == 'zh' else 'en'
-            self._send_json({"status": "error", "message": str(exc), "hint": t(lang, "network_hint")}, status=500)
+
+        self._send_text("Not Found", status=404, content_type="text/plain; charset=utf-8")
 
 
 def main() -> None:

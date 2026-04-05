@@ -691,7 +691,49 @@
       if(/backtest|回测/.test(lower)) return state.lang==='zh' ? `回测结果：策略收益率 ${bm.return_pct ?? '-'}%，买入持有 ${bm.buy_hold_return_pct ?? '-'}%，相对超额 ${bm.alpha_vs_buy_hold_pct ?? '-'}%，最大回撤 ${bm.max_drawdown_pct ?? '-'}%，胜率 ${bm.win_rate_pct ?? '-'}%，交易次数 ${bm.trades ?? '-'}。` : `Backtest results: strategy return ${bm.return_pct ?? '-'}%, buy & hold ${bm.buy_hold_return_pct ?? '-'}%, alpha vs buy & hold ${bm.alpha_vs_buy_hold_pct ?? '-'}%, max drawdown ${bm.max_drawdown_pct ?? '-'}%, win rate ${bm.win_rate_pct ?? '-'}%, trades ${bm.trades ?? '-'}.`;
       return state.lang==='zh' ? `我可以帮你总结走势、解释新闻、说明风险，或者解读回测。\n\n当前核心分析：${d.analysis||'-'}\n预测观点：${d.forecast||'-'}` : `I can help summarize the trend, explain the latest news, highlight risks, or interpret the backtest.\n\nCurrent analysis: ${d.analysis||'-'}\nForecast view: ${d.forecast||'-'}`;
     }
-    function askAi(prompt){const input=el('aiInput'); const q=(prompt ?? input?.value ?? '').trim(); if(!q) return; state.aiChat.push({role:'user',content:q}); state.aiChat.push({role:'assistant',content:buildAiResponse(q)}); if(input) input.value=''; renderAiChat();}
+    async function askAi(prompt){
+      const input=el('aiInput');
+      const q=(prompt ?? input?.value ?? '').trim();
+      if(!q) return;
+      state.aiChat.push({role:'user',content:q});
+      if(input) input.value='';
+      renderAiChat();
+      const sendBtn=el('aiSendBtn');
+      if(sendBtn) sendBtn.disabled=true;
+      try{
+        if(!state.latest){
+          state.aiChat.push({role:'assistant',content:buildAiResponse(q)});
+          renderAiChat();
+          return;
+        }
+        const payload={
+          message:q,
+          lang:state.lang,
+          ticker:state.latest?.ticker||'',
+          stock_name:state.latest?.stock_name||'',
+          context:state.latest||{},
+          history:state.aiChat.slice(-8)
+        };
+        const res=await fetch('/api/llm-chat',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload),
+          cache:'no-store'
+        });
+        const data=await res.json();
+        if(!res.ok || data.status!=='ok') throw new Error(data.message||'AI request failed');
+        state.aiChat.push({role:'assistant',content:data.reply||buildAiResponse(q)});
+      }catch(err){
+        const fallback=buildAiResponse(q);
+        const msg=String(err?.message||err||'AI request failed');
+        state.aiChat.push({role:'assistant',content:`${fallback}
+
+[Fallback mode: ${msg}]`});
+      }finally{
+        if(sendBtn) sendBtn.disabled=false;
+        renderAiChat();
+      }
+    }
     function clearAiChat(){state.aiChat=[]; renderAiChat();}
     function syncAiSide(){if(el('aiCoreSummary')) el('aiCoreSummary').textContent=(state.latest && (state.latest.analysis||state.latest.forecast)) ? `${state.latest.analysis||''} ${state.latest.forecast||''}`.trim() : '-'; if(el('aiFactorsList')) el('aiFactorsList').innerHTML=(state.latest?.key_factors||[]).map(x=>`<li>${x}</li>`).join('')||'<li>-</li>';}
     function renderSavedPacks(){const targets=[el('aiSavedPackList')].filter(Boolean); if(!targets.length) return; targets.forEach(box=>box.innerHTML=''); if(!state.savedPacks.length){targets.forEach(box=>box.innerHTML=`<div class="empty">${txt('noSaved')}</div>`); return;} state.savedPacks.forEach((pack,idx)=>{targets.forEach(box=>{const row=document.createElement('div'); row.className='watch-item'; const info=document.createElement('div'); const d=pack.data||{}; info.innerHTML=`<div><strong>${d.ticker||'-'}</strong> · ${(d.stock_name||'').replace(/</g,'')}</div><div class="small">${(pack.saved_at||'').replace('T',' ').slice(0,19)} · ${d.news?.length||0} news · ${Object.keys(d.model_parameters||{}).length} params</div>`; row.appendChild(info); const load=document.createElement('button'); load.textContent=txt('loadSaved'); load.style.fontSize='12px'; load.style.color='var(--text)'; load.onclick=(e)=>{e.stopPropagation(); renderResult(JSON.parse(JSON.stringify(pack.data))); setPage('ai');}; const exp=document.createElement('button'); exp.textContent=txt('exportSaved'); exp.style.fontSize='12px'; exp.style.color='var(--text)'; exp.onclick=(e)=>{e.stopPropagation(); exportPack(pack);}; const del=document.createElement('button'); del.textContent='×'; del.title=txt('deleteSaved'); del.onclick=(e)=>{e.stopPropagation(); state.savedPacks.splice(idx,1); saveSavedPacks(); renderSavedPacks();}; row.appendChild(load); row.appendChild(exp); row.appendChild(del); box.appendChild(row);});});}
